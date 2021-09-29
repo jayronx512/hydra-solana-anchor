@@ -1,0 +1,12 @@
+[programs.localnet]
+hydra_solana_anchor = "3cRU5Xd1eRHDxhpKmPJBQHxesyrPDjpK8HwHEMwrSdgN"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "localnet"
+wallet = "/home/jingjong/.config/solana/id.json"
+
+[scripts]
+test = "mocha -t 1000000 tests/"
