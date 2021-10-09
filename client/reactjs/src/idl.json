@@ -1,0 +1,131 @@
+{
+    "version": "0.0.0",
+    "name": "hydra_solana_anchor",
+    "instructions": [
+      {
+        "name": "createAccount",
+        "accounts": [
+          {
+            "name": "hydraAccount",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "currency",
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "idNumber",
+            "type": "string"
+          },
+          {
+            "name": "idType",
+            "type": "string"
+          },
+          {
+            "name": "email",
+            "type": "string"
+          },
+          {
+            "name": "remark",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "accounts": [
+      {
+        "name": "HydraAccount",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "pubkey",
+              "type": "publicKey"
+            },
+            {
+              "name": "balance",
+              "type": "string"
+            },
+            {
+              "name": "currency",
+              "type": "string"
+            },
+            {
+              "name": "clientName",
+              "type": "string"
+            },
+            {
+              "name": "clientIdentificationNumber",
+              "type": "string"
+            },
+            {
+              "name": "clientIdentificationType",
+              "type": "string"
+            },
+            {
+              "name": "clientEmail",
+              "type": "string"
+            },
+            {
+              "name": "transactions",
+              "type": {
+                "vec": {
+                  "defined": "HydraJournal"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "types": [
+      {
+        "name": "HydraJournal",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "amount",
+              "type": "string"
+            },
+            {
+              "name": "currency",
+              "type": "string"
+            },
+            {
+              "name": "journalType",
+              "type": "string"
+            },
+            {
+              "name": "referrenceNumber",
+              "type": "string"
+            },
+            {
+              "name": "remark",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "address": "G17Xqi5vxArztd7w1ScgYF1YcYCqf5wcLFDRLd9hQ7Lh"
+    }
+  }
