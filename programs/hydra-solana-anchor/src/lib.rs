@@ -1,35 +1,26 @@
 use anchor_lang::prelude::*;
 
-declare_id!("3cRU5Xd1eRHDxhpKmPJBQHxesyrPDjpK8HwHEMwrSdgN");
+declare_id!("G17Xqi5vxArztd7w1ScgYF1YcYCqf5wcLFDRLd9hQ7Lh");
 
 #[program]
 mod hydra_solana_anchor {
     use super::*;
-    pub fn create(ctx: Context<Create>) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
-        base_account.count = 0;
-        Ok(())
-    }
 
-    pub fn increment(ctx: Context<Increment>) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
-        base_account.count += 1;
-        Ok(())
-    }
-
-    pub fn initialize(ctx: Context<Initialize>, data: String) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
-        let copy = data.clone();
-        base_account.data = data;
-        base_account.data_list.push(copy);
-        Ok(())
-    }
-
-    pub fn update(ctx: Context<Update>, data: String) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
-        let copy = data.clone();
-        base_account.data = data;
-        base_account.data_list.push(copy);
+    pub fn create_account(
+        ctx: Context<Create>,
+        currency: u32,
+        name: String,
+        id_number: String,
+        id_type: String,
+        email: String,
+    ) -> ProgramResult {
+        let sc_account = &mut ctx.accounts.sc_account;
+        sc_account.balance = 0;
+        sc_account.currency = currency;
+        sc_account.client_name = name;
+        sc_account.client_identification_number = id_number;
+        sc_account.client_identification_type = id_type;
+        sc_account.client_email = email;
         Ok(())
     }
 }
@@ -37,40 +28,21 @@ mod hydra_solana_anchor {
 // Transaction instructions
 #[derive(Accounts)]
 pub struct Create<'info> {
-    #[account(init, payer = user, space = 16 + 16)]
-    pub base_account: Account<'info, BaseAccount>,
-    #[account(mut)]
-    pub user: Signer<'info>,
-    pub system_program: Program <'info, System>,
-}
-
-// Transaction instructions
-#[derive(Accounts)]
-pub struct Increment<'info> {
-    #[account(mut)]
-    pub base_account: Account<'info, BaseAccount>,
-}
-
-#[derive(Accounts)]
-pub struct Initialize<'info> {
     #[account(init, payer = user, space = 64 + 64)]
-    pub base_account: Account<'info, BaseAccount>,
+    pub sc_account: Account<'info, SCAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
-pub struct Update<'info> {
-    #[account(mut)]
-    pub base_account: Account<'info, BaseAccount>,
-}
-
-
 // An account that goes inside a transaction instruction
 #[account]
-pub struct BaseAccount {
-    pub count: u64,
-    pub data: String,
-    pub data_list: Vec<String>,
+pub struct SCAccount {
+    pub pubkey: Pubkey,
+    pub balance: u128,
+    pub currency: u32,
+    pub client_name: String,
+    pub client_identification_number: String,
+    pub client_identification_type: String,
+    pub client_email: String,
 }

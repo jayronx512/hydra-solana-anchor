@@ -1,78 +1,29 @@
 const assert = require("assert");
 const anchor = require("@project-serum/anchor");
-const { SystemProgram } = anchor.web3;
+const { SystemProgram, PublicKey } = anchor.web3;
 
-describe("hydra-solana-anchor", () => {
+describe("hydra_solana_anchor", () => {
   /* create and set a Provider */
   const provider = anchor.Provider.env();
   anchor.setProvider(provider);
-  const program = anchor.workspace.hydraSolanaAnchor;
-  it("Creates a counter)", async () => {
-    /* Call the create function via RPC */
-    const baseAccount = anchor.web3.Keypair.generate();
-    await program.rpc.create({
+  const program = anchor.workspace.HydraSolanaAnchor;
+
+  it("Creates customer account", async () => {
+    const payer = new PublicKey("AZeUEhQx4kUTEPE2ovdDJrvP2dsGcPGzceher6X5SM3a");
+    const clientAccount = anchor.web3.Keypair.generate();
+
+    await program.rpc.createAccount("MYR", "MRA", "001", "PASSPORT", "mra@gmail.com", {
       accounts: {
-        baseAccount: baseAccount.publicKey,
-        user: provider.wallet.publicKey,
+        scAccount: clientAccount.publicKey,
+        user: payer,
         systemProgram: SystemProgram.programId,
       },
-      signers: [baseAccount],
+      signers: [clientAccount],
     });
 
-    /* Fetch the account and check the value of count */
-    const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
-    console.log('Count 0: ', account.count.toString())
-    assert.ok(account.count.toString() == 0);
-    _baseAccount = baseAccount;
+    const account = await program.account.scAccount.fetch(clientAccount.publicKey);
+    console.log(account);
 
-  });
-
-  it("Increments the counter", async () => {
-    const baseAccount = _baseAccount;
-
-    await program.rpc.increment({
-      accounts: {
-        baseAccount: baseAccount.publicKey,
-      },
-    });
-
-    const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
-    console.log('Count 1: ', account.count.toString())
-    assert.ok(account.count.toString() == 1);
-  });
-
-  it("It initializes the account", async () => {
-    const baseAccount = _baseAccount;
-    await program.rpc.initialize("Hello World", {
-      accounts: {
-        baseAccount: baseAccount.publicKey,
-        user: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId,
-      },
-      signers: [baseAccount],
-    });
-
-    const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
-    console.log('Data: ', account.data);
-    assert.ok(account.data === "Hello World");
-    _baseAccount = baseAccount;
-
-  });
-
-  it("Updates a previously created account", async () => {
-    const baseAccount = _baseAccount;
-
-    await program.rpc.update("Some new data", {
-      accounts: {
-        baseAccount: baseAccount.publicKey,
-      },
-    });
-
-    const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
-    console.log('Updated data: ', account.data)
-    assert.ok(account.data === "Some new data");
-    console.log('all account data:', account)
-    console.log('All data: ', account.dataList);
-    assert.ok(account.dataList.length === 2);
+    assert.ok(account.balance == 0);
   });
 });
