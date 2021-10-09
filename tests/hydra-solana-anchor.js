@@ -8,20 +8,20 @@ describe("hydra_solana_anchor", () => {
   anchor.setProvider(provider);
   const program = anchor.workspace.HydraSolanaAnchor;
 
-  it("Creates customer account", async () => {
+  it("Create customer account", async () => {
     const payer = new PublicKey("AZeUEhQx4kUTEPE2ovdDJrvP2dsGcPGzceher6X5SM3a");
     const clientAccount = anchor.web3.Keypair.generate();
 
-    await program.rpc.createAccount("MYR", "MRA", "001", "PASSPORT", "mra@gmail.com", {
+    await program.rpc.createAccount("MYR", "MRA", "001", "PASSPORT", "mra@gmail.com", "Remark", {
       accounts: {
-        scAccount: clientAccount.publicKey,
+        hydraAccount: clientAccount.publicKey,
         user: payer,
         systemProgram: SystemProgram.programId,
       },
       signers: [clientAccount],
     });
 
-    const account = await program.account.scAccount.fetch(clientAccount.publicKey);
+    const account = await program.account.hydraAccount.fetch(clientAccount.publicKey);
     console.log(account);
 
     assert.ok(account.balance == 0);
