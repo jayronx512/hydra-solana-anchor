@@ -16,8 +16,8 @@ const opts = {
 }
 const programID = new PublicKey(idl.metadata.address);
 const network = "https://api.devnet.solana.com";
-const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(reactLocalStorage.get("secretKey"))));
-const client = Keypair.generate()
+const clientAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(reactLocalStorage.get("secretKey"))));
+
 function Dashboard() {
     const[publicKey, setPublicKey] =  useState(reactLocalStorage.get("publicKey"));
     const[secretKey, setSecretKey] = useState(reactLocalStorage.get("secretKey"))
@@ -34,8 +34,7 @@ function Dashboard() {
 
 
     async function getProvider() {
-        const wallet = new NodeWallet(payer);
-        const network = "https://api.devnet.solana.com";
+        const wallet = new NodeWallet(clientAccount);
         const connection = new Connection(network, opts.preflightCommitment);
         const provider = new Provider(
             connection, wallet, opts.preflightCommitment
@@ -60,6 +59,9 @@ function Dashboard() {
         )
 
         setBalance(balance / web3.LAMPORTS_PER_SOL);
+
+        
+
         return;
     }
 
@@ -78,32 +80,23 @@ function Dashboard() {
     async function createAccount() {
         const provider = await getProvider();
         const program = new Program(idl, programID, provider);
-        var tempPublicKey = new PublicKey(publicKey)
-        console.log(client)
-        // await program.rpc.createAccount(
-        //     name,
-        //     currency,
-        //     idNumber,
-        //     idType,
-        //     email,
-        //     remark, 
-        //     {
-        //         accounts: {
-        //             hydraAccount: tempPublicKey,
-        //             user: payer,
-        //             systemProgram: SystemProgram.programId,
-        //         },
-        //         signers: [payer]
-        //     }
-        // )
-        program.rpc.createAccount("MYR", "MRA", "001", "PASSPORT", "mra@gmail.com", "Remark", {
+        await program.rpc.createAccount(
+            name,
+            currency,
+            idNumber,
+            idType,
+            email,
+            remark, {
             accounts: {
-            hydraAccount: tempPublicKey,
-            user: payer,
-            systemProgram: SystemProgram.programId,
-            },
-            signers: [payer],
+                hydraAccount: new PublicKey(publicKey),
+                user: provider.wallet.publicKey,
+                systemProgram: SystemProgram.programId,
+                },
+                signers: [clientAccount],
             });
+        const account = await program.account.hydraAccount.fetch(clientAccount.publicKey);
+        console.log(account);
+        return
     }
 
     return (
