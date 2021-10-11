@@ -1,45 +1,217 @@
 {
-    "version": "0.0.0",
-    "name": "hydra_solana_anchor",
-    "instructions": [
-      {
-        "name": "createAccount",
-        "accounts": [
+  "version": "0.0.0",
+  "name": "hydra_coreless_banking",
+  "instructions": [
+    {
+      "name": "createAccount",
+      "accounts": [
+        {
+          "name": "hydraAccount",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "currency",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "idNumber",
+          "type": "string"
+        },
+        {
+          "name": "idType",
+          "type": "string"
+        },
+        {
+          "name": "email",
+          "type": "string"
+        },
+        {
+          "name": "remark",
+          "type": "string"
+        },
+        {
+          "name": "referrenceNumber",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "reset",
+      "accounts": [
+        {
+          "name": "fromAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "toAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "transfer",
+      "accounts": [
+        {
+          "name": "fromAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "toAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "remark",
+          "type": "string"
+        },
+        {
+          "name": "referrenceNumber",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "debit",
+      "accounts": [
+        {
+          "name": "hydraAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "remark",
+          "type": "string"
+        },
+        {
+          "name": "referrenceNumber",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "accounts": [
+        {
+          "name": "hydraAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "remark",
+          "type": "string"
+        },
+        {
+          "name": "referrenceNumber",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "HydraAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            "name": "hydraAccount",
-            "isMut": true,
-            "isSigner": true
+            "name": "pubkey",
+            "type": "publicKey"
           },
           {
-            "name": "user",
-            "isMut": true,
-            "isSigner": true
+            "name": "balance",
+            "type": "u64"
           },
-          {
-            "name": "systemProgram",
-            "isMut": false,
-            "isSigner": false
-          }
-        ],
-        "args": [
           {
             "name": "currency",
             "type": "string"
           },
           {
-            "name": "name",
+            "name": "clientName",
             "type": "string"
           },
           {
-            "name": "idNumber",
+            "name": "clientIdentificationNumber",
             "type": "string"
           },
           {
-            "name": "idType",
+            "name": "clientIdentificationType",
             "type": "string"
           },
           {
-            "name": "email",
+            "name": "clientEmail",
+            "type": "string"
+          },
+          {
+            "name": "transactions",
+            "type": {
+              "vec": {
+                "defined": "HydraJournal"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "HydraJournal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "i64"
+          },
+          {
+            "name": "currency",
+            "type": "string"
+          },
+          {
+            "name": "journalType",
+            "type": "string"
+          },
+          {
+            "name": "referrenceNumber",
             "type": "string"
           },
           {
@@ -48,84 +220,9 @@
           }
         ]
       }
-    ],
-    "accounts": [
-      {
-        "name": "HydraAccount",
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "pubkey",
-              "type": "publicKey"
-            },
-            {
-              "name": "balance",
-              "type": "string"
-            },
-            {
-              "name": "currency",
-              "type": "string"
-            },
-            {
-              "name": "clientName",
-              "type": "string"
-            },
-            {
-              "name": "clientIdentificationNumber",
-              "type": "string"
-            },
-            {
-              "name": "clientIdentificationType",
-              "type": "string"
-            },
-            {
-              "name": "clientEmail",
-              "type": "string"
-            },
-            {
-              "name": "transactions",
-              "type": {
-                "vec": {
-                  "defined": "HydraJournal"
-                }
-              }
-            }
-          ]
-        }
-      }
-    ],
-    "types": [
-      {
-        "name": "HydraJournal",
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "amount",
-              "type": "string"
-            },
-            {
-              "name": "currency",
-              "type": "string"
-            },
-            {
-              "name": "journalType",
-              "type": "string"
-            },
-            {
-              "name": "referrenceNumber",
-              "type": "string"
-            },
-            {
-              "name": "remark",
-              "type": "string"
-            }
-          ]
-        }
-      }
-    ],
-    "metadata": {
-      "address": "G17Xqi5vxArztd7w1ScgYF1YcYCqf5wcLFDRLd9hQ7Lh"
     }
+  ],
+  "metadata": {
+    "address": "2WGPmHfmXLfUjL1wEpmUGGHA8LRwbPbYEbMwmUQ6Z186"
   }
+}

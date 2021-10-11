@@ -45,7 +45,6 @@ export default function Landing() {
                 reactLocalStorage.set("account", JSON.stringify(accountData[i]))
                 setAccount(accountData[i])
                 history.push('/dashboard')
-                window.location.reload() 
                 return
             }
         }

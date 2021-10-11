@@ -29,10 +29,16 @@ const useStyles = makeStyles({
 
 export default function CustomBottomNavigation(initState) {
     const classes = useStyles();
-    const [value, setValue] = useState(0);
+    const [value, setValue] = useState(null);
 
     useEffect(() => {
-
+        if(initState.name == "dashboard") {
+            setValue(0)
+        } else if (initState.name == "transfer") {
+            setValue(1)
+        } else if (initState.name == "payee") {
+            setValue(2)
+        }
     }, []);
 
     return (
