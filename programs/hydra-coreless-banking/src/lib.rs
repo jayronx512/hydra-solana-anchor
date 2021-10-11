@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 
-declare_id!("G17Xqi5vxArztd7w1ScgYF1YcYCqf5wcLFDRLd9hQ7Lh");
+declare_id!("2WGPmHfmXLfUjL1wEpmUGGHA8LRwbPbYEbMwmUQ6Z186");
 
 #[program]
-mod hydra_solana_anchor {
+mod hydra_coreless_banking {
     use super::*;
 
     pub fn create_account(
@@ -92,14 +92,14 @@ mod hydra_solana_anchor {
         let hydra_account = &mut ctx.accounts.hydra_account;
         hydra_account.balance += amount;
 
-        let sender_journal = HydraJournal {
+        let journal = HydraJournal {
             amount: amount as i64,
             currency: hydra_account.currency.clone(),
             journal_type: String::from("debit"),
             referrence_number: referrence_number.clone(),
             remark: remark.clone(),
         };
-        hydra_account.transactions.push(sender_journal);
+        hydra_account.transactions.push(journal);
 
         Ok(())
     }
@@ -129,8 +129,9 @@ mod hydra_solana_anchor {
 // Transaction instructions for Create Account
 #[derive(Accounts)]
 pub struct Create<'info> {
-    #[account(init, payer = user, space = 128 + 128)]
+    #[account(init, payer = user, space = 1000)]
     pub hydra_account: Account<'info, HydraAccount>,
+
     #[account(mut)]
     pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
