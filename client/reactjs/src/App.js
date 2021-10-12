@@ -8,6 +8,8 @@ import Landing from './pages/landing'
 import Dashboard from './pages/dashboard';
 import SignUp from './pages/signup';
 import Payee from './pages/payee';
+import Transfer from './pages/transfer';
+import Admin from './pages/admin';
 
 function App() {
   return (
@@ -17,7 +19,9 @@ function App() {
           <Route exact path="/" render={props => (<Landing {...props} />)}/>
           <Route exact path="/dashboard" render={props => (<Dashboard {...props} />)}/>
           <Route exact path="/signup" render={props => (<SignUp {...props} />)}/>
-          <Route exact path="/payee" component={Payee}/>
+          <Route exact path="/payee" render={props => (<Payee {...props} />)}/>
+          <Route exact path="/transfer" render={props => (<Transfer {...props} />)}/>
+          <Route exact path="/admin" render={props => (<Admin {...props} />)}/>
         </Switch>
       </Router>
     </div>

@@ -99,7 +99,6 @@ const typo = {
 const typo2 = {
     fontFamily: "Open-Sans", 
     display: "flex",
-    margin: 5,
     fontSize: "1.3rem"
 }
 
@@ -177,9 +176,13 @@ root: {
 },
 }))(MuiAccordionDetails);
 
-// const secretKey = JSON.parse(reactLocalStorage.get("account")).secretKey
-// const clientAccount = Keypair.fromSecretKey(new Uint8Array(secretKey));
-// console.log(JSON.parse(reactLocalStorage.get("account")).secretKey)
+const accordionStyle = {
+    backgroundColor: "#ffcdd2",
+    marginLeft: "10px",
+    marginRight: "10px",
+    border: "1px solid black",
+    padding: "15px"
+}
 
 function Dashboard() {
     const classes = useStyles();
@@ -187,7 +190,7 @@ function Dashboard() {
     const[loading, setLoading] = useState(false)
     const[publicKey, setPublicKey] =  useState("");
     const[secretKey, setSecretKey] = useState("")
-    const[account, setAccount] = useState({accountList: []})
+    const[account, setAccount] = useState({accountList: [], solanaAccount: {publicKey: "", secretKey: "", balance: 0}})
     const[open, setOpen] = useState(false)
     const[name, setName] = useState({value: "", error: true})
     const[currency, setCurrency] = useState({value: "", error: true})
@@ -195,6 +198,10 @@ function Dashboard() {
     const[debitOpen, setDebitOpen] = useState(false)
     const[newPublicKey, setNewPublicKey] = useState("")
     const[shortenedPublicKey, setShortenedPublicKey] = useState("")
+    const[solanaPublicKey, setSolanaPublicKey] = useState("")
+    const[solanaSecretKey, setSolanaSecretKey] = useState("")
+    const[shortenedSolanaPublicKey, setShortenedSolanaPublicKey] = useState("")
+    const[solanaBalance, setSolanaBalance] = useState(0)
     const[amount, setAmount] = useState({value: 0, error: true})
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
@@ -209,11 +216,42 @@ function Dashboard() {
         let account = JSON.parse(reactLocalStorage.get("account"))
         let newAccount = []
         for (let i=0; i<account.accountList.length; i++) {
+            //get sol balance
             let individualAccount = account.accountList[i]
-            individualAccount.solBalance = await getBalance(individualAccount.publicKey, individualAccount.secretKey)
-            newAccount.push(individualAccount)
+            try {
+                individualAccount.solBalance = await getBalance(individualAccount.publicKey, individualAccount.secretKey)
+                //get hydra balance
+                if (account.solanaAccount.secretKey != "") {
+                    const provider = await getProvider(account.solanaAccount.secretKey);
+                    const program = new Program(idl, programID, provider);
+                    let publicKey = new PublicKey(individualAccount.publicKey)
+                    let receiverAccount = await program.account.hydraAccount.fetch(publicKey);
+                    // var instances = await program.account.hydraAccount.all();
+                    // console.log(instances)
+                    // instances.forEach(instance => {
+                    //     console.log(instance.publicKey.toString());
+                    //     console.log(instance.account);
+                    // });
+                    console.log(receiverAccount)
+                    individualAccount.balance = receiverAccount.balance.words[0]
+                    individualAccount.transactionList = receiverAccount.transactions
+                    newAccount.push(individualAccount)
+                }
+            } catch(error) {
+                alert("Failed to get account details: " + error)
+            }
         }
         account.accountList = newAccount
+        setSolanaPublicKey(account.solanaAccount.publicKey)
+        setSolanaSecretKey(account.solanaAccount.secretKey)
+        if (account.solanaAccount.publicKey.length > 0) {
+            let half = Math.ceil(account.solanaAccount.publicKey.toString().length / 2)
+            let publicKeyString = account.solanaAccount.publicKey.toString()
+            setShortenedSolanaPublicKey(publicKeyString.substr(0, half) + "...")
+            account.solanaAccount.balance = await getBalance(account.solanaAccount.publicKey, account.solanaAccount.secretKey)
+            setSolanaBalance(account.solanaAccount.balance)
+        }
+        console.log(account)
         setAccount(account)
         setLoading(false)
     }, [])
@@ -233,44 +271,64 @@ function Dashboard() {
         // const provider = await getProvider()
         // const program = new Program(idl, programID, provider)
         setLoading(true)
-        const provider = await getProvider(secretKey);
-        const program = new Program(idl, programID, provider);
-        const connection = program.provider.connection;
-        var fromAirdropSignature = await connection.requestAirdrop(
-            new PublicKey(publicKey),
-            web3.LAMPORTS_PER_SOL,
-          );
-        // Wait for airdrop confirmation
-        await connection.confirmTransaction(fromAirdropSignature);
-        resetBalance();
-        const timer = setTimeout(() => {
-            setLoading(false)
-          }, 2000);
+        try {
+            const provider = await getProvider(secretKey);
+            const program = new Program(idl, programID, provider);
+            const connection = program.provider.connection;
+            var fromAirdropSignature = await connection.requestAirdrop(
+                new PublicKey(publicKey),
+                web3.LAMPORTS_PER_SOL,
+            );
+            // Wait for airdrop confirmation
+            await connection.confirmTransaction(fromAirdropSignature);
+            // resetBalance();
+            const balance = await getBalance(solanaPublicKey, solanaSecretKey)
+            setSolanaBalance(balance)
+            const timer = setTimeout(() => {
+                setLoading(false)
+            }, 2000);
+        } catch(error) {
+            alert("Failed to request airdrop: " + error)
+        }
         return;
     }
 
     async function getBalance(publicKey, secretKey) {
-        const provider = await getProvider(secretKey);
-        const program = new Program(idl, programID, provider);
-        const connection = program.provider.connection;
-        var balance = await connection.getBalance(
-            new PublicKey(publicKey)
-        )
+        try {
+            const provider = await getProvider(secretKey);
+            const program = new Program(idl, programID, provider);
+            const connection = program.provider.connection;
+            var balance = await connection.getBalance(
+                new PublicKey(publicKey)
+            )
 
-        return balance / web3.LAMPORTS_PER_SOL;
+            return balance / web3.LAMPORTS_PER_SOL;
+        } catch(error) {
+            alert("Failed to get balance: " + error)
+        }
     }
 
     async function resetBalance() {
-        let temporaryAccount = account
-        let newAccount = []
-        for (let i=0; i<temporaryAccount.accountList.length; i++) {
-            let individualAccount = temporaryAccount.accountList[i]
-            individualAccount.solBalance = await getBalance(individualAccount.publicKey, individualAccount.secretKey)
-            newAccount.push(individualAccount)
+        try {
+            const provider = await getProvider(solanaSecretKey);
+            const program = new Program(idl, programID, provider);
+            let temporaryAccount = account
+            let newAccount = []
+            for (let i=0; i<temporaryAccount.accountList.length; i++) {
+                let individualAccount = temporaryAccount.accountList[i]
+                individualAccount.solBalance = await getBalance(individualAccount.publicKey, individualAccount.secretKey)
+                let publicKey = new PublicKey(individualAccount.publicKey)
+                let receiverAccount = await program.account.hydraAccount.fetch(publicKey);
+                console.log(receiverAccount)
+                console.log(receiverAccount.balance.words[0])
+                // individualAccount.balance = receiverAccount.balance.words[0]
+                newAccount.push(individualAccount)
+            }
+            temporaryAccount.accountList = newAccount
+            setAccount(temporaryAccount)
+        } catch(error) {
+            alert("Failed to reset balance: " + error)
         }
-        console.log(temporaryAccount)
-        temporaryAccount.accountList = newAccount
-        setAccount(temporaryAccount)
     }
 
     const handleNameChange = (e) => {
@@ -316,85 +374,141 @@ function Dashboard() {
        return result;
     }
 
+    async function createSolanaAccount() {
+        setLoading(true)
+        try {
+            const solanaAccount = Keypair.generate()
+            const provider = await getProvider(solanaAccount.secretKey, true);
+            const publicKey = solanaAccount.publicKey
+            const program = new Program(idl, programID, provider);
+            const connection = program.provider.connection;
+            var fromAirdropSignature = await connection.requestAirdrop(
+                publicKey,
+                web3.LAMPORTS_PER_SOL,
+            );
+            // Wait for airdrop confirmation
+            await connection.confirmTransaction(fromAirdropSignature);
+            var balance = await connection.getBalance(
+                publicKey
+            )
+
+            balance = balance / web3.LAMPORTS_PER_SOL;
+
+            let temporaryAccount = account
+            let solanaAccountObject = {
+                publicKey: publicKey.toString(),
+                secretKey: JSON.stringify(Array.from(solanaAccount.secretKey)),
+                balance: balance 
+            }
+            temporaryAccount.solanaAccount = solanaAccountObject
+            setAccount(temporaryAccount)
+            reactLocalStorage.set("account", JSON.stringify(temporaryAccount))
+            setSolanaPublicKey(publicKey.toString())
+            let half = Math.ceil(publicKey.toString().length / 2)
+            let publicKeyString = publicKey.toString()
+            setShortenedSolanaPublicKey(publicKeyString.substr(0, half) + "...")
+            setSolanaBalance(balance)
+            setSolanaSecretKey(JSON.stringify(Array.from(solanaAccount.secretKey)))
+        } catch (error) {
+            alert("Failed to create hydra account: " + error)
+        }
+        setLoading(false)
+    }
+
     async function createAccount() {
+        if (account.solanaAccount.publicKey == "") {
+            alert("Please create a solana account first!")
+            return
+        }
         setLoading(true)
         handleClose()
-        const clientAccount = Keypair.generate()
-        const provider = await getProvider(clientAccount.secretKey, true);
+        //get sol account
+        try {
+            const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)))
 
-        const publicKey = clientAccount.publicKey
-        const program = new Program(idl, programID, provider);
-        const connection = program.provider.connection;
-        const newReferenceNumber = transactionReferenceGenerator()
-        var fromAirdropSignature = await connection.requestAirdrop(
-            publicKey,
-            web3.LAMPORTS_PER_SOL,
-          );
-        // Wait for airdrop confirmation
-        await connection.confirmTransaction(fromAirdropSignature);
-        var balance = await connection.getBalance(
-            publicKey
-        )
-        console.log(balance / web3.LAMPORTS_PER_SOL)
-        await program.rpc.createAccount(
-            currency.value,
-            name.value,
-            account.idNumber,
-            account.idType,
-            account.email,
-            "Create",
-            newReferenceNumber, {
-            accounts: {
-                hydraAccount: publicKey,
-                user: provider.wallet.publicKey,
-                systemProgram: SystemProgram.programId,
-                },
-                signers: [clientAccount],
-            });
-        const newAccount = await program.account.hydraAccount.fetch(clientAccount.publicKey);
-        let temporaryAccount = account
-        let temporaryAccountList = account.accountList
-        let newObject = {
-            name: newAccount.clientName,
-            currency: newAccount.currency,
-            publicKey: publicKey.toString(),
-            secretKey: JSON.stringify(Array.from(clientAccount.secretKey)),
-            balance: newAccount.balance,
-            transactionList: []
+            //create hydra account
+            const hydraAccount = Keypair.generate()
+            const provider = await getProvider(solanaSecretKey)
+            const program = new Program(idl, programID, provider);
+            let newReferenceNumber = transactionReferenceGenerator()
+            await program.rpc.createAccount(
+                currency.value,
+                name.value,
+                account.idNumber,
+                account.idType,
+                account.email,
+                "Create",
+                newReferenceNumber, {
+                accounts: {
+                    hydraAccount: hydraAccount.publicKey,
+                    user: solAccount.publicKey,
+                    systemProgram: SystemProgram.programId,
+                    },
+                    signers: [solAccount, hydraAccount],
+                });
+            const newAccount = await program.account.hydraAccount.fetch(hydraAccount.publicKey);
+            let temporaryAccount = account
+            let temporaryAccountList = account.accountList
+            let newObject = {
+                name: newAccount.clientName,
+                currency: newAccount.currency,
+                publicKey: hydraAccount.publicKey.toString(),
+                secretKey: JSON.stringify(Array.from(hydraAccount.secretKey)),
+                balance: 0,
+                transactionList: []
+            }
+            temporaryAccountList.push(newObject)
+            temporaryAccount.accountList = temporaryAccountList
+            setAccount(temporaryAccount)
+            setNewPublicKey(hydraAccount.publicKey.toString())
+            let half = Math.ceil(hydraAccount.publicKey.toString().length / 2)
+            let publicKeyString = hydraAccount.publicKey.toString()
+            setShortenedPublicKey(publicKeyString.substr(0, half) + "...")
+            reactLocalStorage.set("account", JSON.stringify(temporaryAccount))
+            resetBalance()
+            setCurrency({value: "", error: true})
+            setName({value: "", error: true})
+            setSuccessOpen(true)
+        } catch (error) {
+            alert("Failed to create hydra account: " + error)
         }
-        temporaryAccountList.push(newObject)
-        temporaryAccount.accountList = temporaryAccountList
-        setAccount(temporaryAccount)
-        setNewPublicKey(publicKey.toString())
-        let half = Math.ceil(publicKey.toString().length / 2)
-        let publicKeyString = publicKey.toString()
-        setShortenedPublicKey(publicKeyString.substr(0, half) + "...")
-        console.log(publicKeyString)
-        console.log(JSON.stringify(Array.from(clientAccount.secretKey)))
-        reactLocalStorage.set("account", JSON.stringify(temporaryAccount))
-        setSuccessOpen(true)
         setLoading(false)
         return
     }
 
-    async function debit(publicKeyString, secretKey) {
+    async function debit(publicKeyString) {
         setLoading(true)
-        const provider = await getProvider(secretKey);
-        const publicKey = new PublicKey(publicKeyString)
-        const program = new Program(idl, programID, provider);
-        const newReferenceNumber = transactionReferenceGenerator()
-        await program.rpc.debit(new BN(amount), "Debit Money", newReferenceNumber, {
-            accounts: {
-                hydraAccount: publicKey
+        try {
+            const provider = await getProvider(solanaSecretKey);
+            const publicKey = new PublicKey(publicKeyString)
+            const program = new Program(idl, programID, provider);
+            const newReferenceNumber = transactionReferenceGenerator()
+            await program.rpc.debit(new BN(amount.value), "Debit Money", newReferenceNumber, {
+                accounts: {
+                    hydraAccount: publicKey
+                }
+            })
+            const receiverAccount = await program.account.hydraAccount.fetch(publicKey);
+            console.log("Journal");
+            receiverAccount.transactions.forEach(journal => {
+                console.log(journal.journalType + " : " + journal.amount.toString());
+            });
+            let temporaryAccount = account
+            let temporaryAccountList = account.accountList
+            for (let i=0; i<temporaryAccountList.length; i++) {
+                if(temporaryAccountList[i].publicKey == publicKeyString) {
+                    temporaryAccountList[i].balance = receiverAccount.balance.words[0]
+                    temporaryAccountList[i].transactionList = receiverAccount.transactions
+                }
             }
-        })
-        const receiverAccount = await program.account.hydraAccount.fetch(publicKey);
-        console.log(receiverAccount.pubkey.toString());
-        console.log(receiverAccount.balance.toString());
-        console.log("Journal");
-        receiverAccount.transactions.forEach(journal => {
-            console.log(journal.journalType + " : " + journal.amount.toString());
-        });
+            temporaryAccount.accountList = temporaryAccountList
+            setAccount(temporaryAccount)
+            setAmount({value: 0, error: true})
+            resetBalance()
+            handleDebitClose()
+        } catch(error) {
+            alert("Failed to debit to this account: " + error)
+        }
         setLoading(false)
     }
 
@@ -451,7 +565,7 @@ function Dashboard() {
                             }}
                         />
                         {amount.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
-                        <Button variant="outlined" classes={{root: classes.button}} onClick={()=>{debit(publicKey, secretKey)}}>Debit</Button>
+                        <Button variant="outlined" classes={{root: classes.button}} onClick={()=>{debit(publicKey)}}>Debit</Button>
                     </div>
                 </Box>
             </Modal>
@@ -531,10 +645,11 @@ function Dashboard() {
                     </div>
                 </Box>
             </Modal>
-            <div style={{margin: 10}}>
+            <div style={{margin: 10, maxHeight: "80vh", overflow: "scroll"}}>
+                <h3 style={{fontFamily: "Open-Sans", textAlign: "center"}}>Hydra Account</h3>
                 {account.accountList.length > 0 ?
                     account.accountList.map((item) => {
-                        const amount = String(item.solBalance) + item.currency
+                        const amount = String(item.balance) + " " + item.currency
                         return (
                             <Accordion className={classes.accord}>
                                 <AccordionSummary
@@ -546,26 +661,46 @@ function Dashboard() {
                                 >
                                 <Typography style={{fontFamily: "Open-Sans"}}>{item.name}</Typography>
                                 </AccordionSummary>
-                                <AccordionDetails>
-                                    <Typography style={typo2}><strong>Balance: {item.solBalance ? amount : "0.000000"}</strong></Typography>
+                                <AccordionDetails style={accordionStyle}>
+                                    <Typography style={typo2}><strong>Balance: {item.balance ? amount : "0.000000"}</strong></Typography>
                                     {item.transactionList.map((item2)=> {
                                         return (
                                             <div style={{display: "flex", flexDirection: "column"}}>
-                                                <Typography style={typo}>Signature: {item2.signature}</Typography>
-                                                <Typography style={typo3}>Amount: {item2.amount}</Typography>
+                                                {/* <Typography style={typo}>Signature: {item2.signature}</Typography>
+                                                <Typography style={typo3}>Amount: {item2.amount}</Typography> */}
+                                                <div>Journal Type: {item2.journalType}</div>
+                                                <div>Transaction Reference: {item2.referrenceNumber}</div>
+                                                <div>Amount: {item2.amount.words[0]} {item2.currency}</div>
+                                                <div>Remark: {item2.remark}</div>
                                                 <hr style={{width: "95%", backgroundColor: "black"}}/>
                                             </div>
                                         )
                                     })}
-                                    <Button variant="outlined" classes={{root: classes.button}} onClick={()=> requestAirDrop(item.publicKey, item.secretKey)}>Request Airdrop</Button>
                                     <Button variant="outlined" classes={{root: classes.button}} onClick={()=> {
                                         setPublicKey(item.publicKey); setSecretKey(item.secretKey); handleDebitOpen()
-                                        }}>Debit</Button>
+                                        }}>Top Up</Button>
                                 </AccordionDetails>
                             </Accordion>
                         )
                     }) : <div style={{fontFamily: "Open-Sans", textAlign: "center"}}>No Accounts</div>}
                 <Button style={{marginTop: 20}} variant="outlined" classes={{root: classes.button}} onClick={handleOpen}>Create Account</Button>
+                <hr style={{marginBottom : "10px", marginTop: "10px"}}/>
+                <h3 style={{fontFamily: "Open-Sans", textAlign: "center"}}>Solana Account</h3>
+                {account.solanaAccount.publicKey != "" ? 
+                    <div>
+                        <div style={{display: "flex", justifyContent: "space-between"}}>
+                            <div style={{fontFamily: "Open-Sans"}}>Public Key: {shortenedSolanaPublicKey}</div>
+                            <ContentCopyIcon onClick={()=>{navigator.clipboard.writeText(solanaPublicKey); alert("Copied to clipboard")}}/>
+                        </div>
+                        <div style={{fontFamily: "Open-Sans"}}>Balance: {solanaBalance} SOL</div>
+                    </div>
+                : 
+                    <h5  style={{fontFamily: "Open-Sans", textAlign: "center"}}>No Solana Account</h5>
+                }
+                {account.solanaAccount.publicKey != "" ? <Button variant="outlined" classes={{root: classes.button}} onClick={()=> {
+                    requestAirDrop(solanaPublicKey, solanaSecretKey)
+                }}>Top Up</Button> : <Button variant="outlined" classes={{root: classes.button}} onClick={()=> {createSolanaAccount()}}>Create Solana Account</Button>}
+                
             </div>
             <CustomBottomNavigation name="dashboard"/>
         </div>

@@ -152,6 +152,14 @@ const typo = {
     fontSize: "1.0rem"
 }
 
+const accordionStyle = {
+    backgroundColor: "#cfd8dc",
+    marginLeft: "10px",
+    marginRight: "10px",
+    border: "1px solid black",
+    padding: "15px"
+}
+
 export default function Payee() {
     const classes = useStyles()
     const classes2 = useStyles2()
@@ -164,12 +172,28 @@ export default function Payee() {
     const [amount, setAmount] = useState({value: 0, error: true})
     const [remark, setRemark] = useState({value: "", error: false})
     const [toPublicKey, setToPublicKey] = useState("")
+    const[solanaPublicKey, setSolanaPublicKey] = useState("")
+    const[solanaSecretKey, setSolanaSecretKey] = useState("")
+    const[addPayeeOpen, setAddPayeeOpen] = useState(false)
+
+    //add payee
+    const[payeeName, setPayeeName] = useState({value: "", error: true})
+    const[payeePublicKey, setPayeePublicKey] = useState({value: "", error: true})
+    const[payeeEmail, setPayeeEmail] = useState({value: "", error: true})
+    const[payeeNickname, setPayeeNickname] = useState({value: "", error: true})
+    const[payeeCurrency, setPayeeCurrency] = useState({value: "", error: true})
+
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
+    const handleAddPayeeOpen = () => setAddPayeeOpen(true);
+    const handleAddPayeeClose = () => setAddPayeeOpen(false);
 
     useEffect(() => {
         setLoading(true)
         let account = JSON.parse(reactLocalStorage.get("account"))
+        setSolanaPublicKey(account.solanaAccount.publicKey)
+        setSolanaSecretKey(account.solanaAccount.secretKey)
+        setAccount(account)
         setPayeeList(account.payeeList)
         setAccountList(account.accountList)
         setLoading(false)
@@ -215,6 +239,86 @@ export default function Payee() {
         })
     }
 
+    const handlePayeeNameChange = (e) => {
+        if (e.target.value != "") {
+            setPayeeName({
+                ...payeeName,
+                error:false,
+                value: e.target.value
+            })
+        } else {
+            setPayeeName({
+                ...payeeName,
+                error: true,
+                value: ""
+            })
+        }
+    }
+
+    const handlePayeePublicKeyChange = (e) => {
+        if (e.target.value != "") {
+            setPayeePublicKey({
+                ...payeePublicKey,
+                error:false,
+                value: e.target.value
+            })
+        } else {
+            setPayeePublicKey({
+                ...payeePublicKey,
+                error: true,
+                value: ""
+            })
+        }
+    }
+
+    const handlePayeeEmailChange = (e) => {
+        if (e.target.value != "") {
+            setPayeeEmail({
+                ...payeeEmail,
+                error:false,
+                value: e.target.value
+            })
+        } else {
+            setPayeeEmail({
+                ...payeeEmail,
+                error: true,
+                value: ""
+            })
+        }
+    }
+
+    const handlePayeeNicknameChange = (e) => {
+        if (e.target.value != "") {
+            setPayeeNickname({
+                ...payeeNickname,
+                error:false,
+                value: e.target.value
+            })
+        } else {
+            setPayeeNickname({
+                ...payeeNickname,
+                error: true,
+                value: ""
+            })
+        }
+    }
+
+    const handlePayeeCurrencyChange = (e) => {
+        if (e.target.value != "") {
+            setPayeeCurrency({
+                ...payeeCurrency,
+                error:false,
+                value: e.target.value
+            })
+        } else {
+            setPayeeCurrency({
+                ...payeeCurrency,
+                error: true,
+                value: ""
+            })
+        }
+    }
+
     async function getProvider(secretKey, newAccount = false) {
         const clientAccount = Keypair.fromSecretKey(newAccount ? secretKey : new Uint8Array(JSON.parse(secretKey)));
         const wallet = new NodeWallet(clientAccount);
@@ -230,8 +334,8 @@ export default function Payee() {
         var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         var charactersLength = characters.length;
         for ( var i = 0; i < length; i++ ) {
-          result += characters.charAt(Math.floor(Math.random() * 
-     charactersLength));
+            result += characters.charAt(Math.floor(Math.random() * 
+        charactersLength));
        }
        return result;
     }
@@ -244,6 +348,9 @@ export default function Payee() {
         if (amount.value == "" || amount.value < 0) {
             errorMessage += "Invalid amount!\n"
         }
+        if (solanaSecretKey == "" || solanaSecretKey == null) {
+            errorMessage += "No solana account found!\n"
+        }
 
         if (errorMessage != "") {
             alert(errorMessage)
@@ -253,25 +360,82 @@ export default function Payee() {
         const toAccount = new PublicKey(toPublicKey)
         let keys = fromPublicKey.value.split(" ")
         const fromAccount = new PublicKey(keys[0])
-        const provider = await getProvider(keys[1]);
-        const program = new Program(idl, programID, provider);
+        try {
+            const provider = await getProvider(solanaSecretKey);
+            const program = new Program(idl, programID, provider);
 
-        const transactionReferenceNumber = transactionReferenceGenerator();
-        console.log(amount.value)
-        console.log(toPublicKey)
-        console.log(keys[0])
-        console.log(keys[1])
-        await program.rpc.transfer(
-            new BN(amount.value),
-            remark.value,
-            transactionReferenceNumber, {
-            accounts: {
-                fromAccount: fromAccount,
-                toAccount: toAccount
-            }
-        })
-
+            const transactionReferenceNumber = transactionReferenceGenerator();
+            await program.rpc.transfer(
+                new BN(amount.value),
+                remark.value,
+                transactionReferenceNumber, {
+                accounts: {
+                    fromAccount: fromAccount,
+                    toAccount: toAccount
+                }
+            })
+            setRemark({value: "", error: false})
+            setAmount({value: 0, error: true})
+            setToPublicKey({value: "", error: true})
+            setFromPublicKey({value: "", error: true})
+            alert("Successfully transfer!")
+        } catch(error) {
+            alert("Failed to transfer fund to payee: " + error)
+        }
+        
+        handleClose()
         setLoading(false)
+    }
+
+    const addPayee = () => {
+        let errorMessage = ""
+        if (payeeName.value == "") {
+            errorMessage += "Payee's name cannot be left empty!\n"
+        }
+        if (payeeEmail.value == "") {
+            errorMessage += "Payee's email cannot be left empty!\n"
+        }
+        if (payeeNickname.value == "") {
+            errorMessage += "Payee's nickname cannot be left empty!\n"
+        }
+        if (payeePublicKey.value == "") {
+            errorMessage += "Payee's public key cannot be left empty!\n"
+        }
+        if (payeePublicKey.value == "") {
+            errorMessage += "Payee's public key cannot be left empty!\n"
+        }
+        if (payeeCurrency.value == "") {
+            errorMessage += "Payee's currency cannot be left empty!\n"
+        }
+
+        if (errorMessage != "") {
+            alert(errorMessage)
+            return
+        }
+        setLoading(true)
+        let temporaryAccount = account
+        let temporaryPayeeList = account.payeeList
+        let newObj = {
+            name: payeeName.value,
+            email: payeeEmail.value,
+            publicKey: payeePublicKey.value,
+            nickname: payeeNickname.value,
+            currency: payeeCurrency.value,
+            secretKey: ""
+        }
+        temporaryPayeeList.push(newObj)
+        temporaryAccount.payeeList = temporaryPayeeList
+        setPayeeList(temporaryPayeeList)
+        setAccount(temporaryAccount)
+        setPayeeName({value: "", error: true})
+        setPayeeNickname({value: "", error: true})
+        setPayeeEmail({value: "", error: true})
+        setPayeePublicKey({value: "", error: true})
+        setPayeeCurrency({value: "", error: true})
+        handleAddPayeeClose()
+        reactLocalStorage.set("account", JSON.stringify(temporaryAccount))
+        setLoading(false)
+        return
     }
     
 
@@ -364,10 +528,136 @@ export default function Payee() {
                     </div>
                 </Box>
             </Modal>
+            <Modal
+                open={addPayeeOpen}
+                onClose={handleAddPayeeClose}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+            >
+                <Box sx={style}>
+                    <div>
+                        <TextField
+                            required
+                            id="outlined-required"
+                            label="Payee Name"
+                            variant="outlined"
+                            value={payeeName.value}
+                            onChange={handlePayeeNameChange}
+                            error={payeeName.error}
+                            style={payeeName.error ? {} : {marginBottom: 20}}
+                            InputLabelProps={{
+                                classes: {
+                                    root: classes.cssLabel,
+                                    focused: classes.cssFocused
+                                }
+                            }}
+                            InputProps={{
+                                classes: {
+                                    root: classes.cssOutlinedInput,
+                                    focused: classes.cssFocused,
+                                    notchedOutline: classes.notchedOutline
+                                }
+                            }}
+                        />
+                        {payeeName.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
+                        <TextField
+                            id="outlined"
+                            label="Payee Email"
+                            variant="outlined"
+                            value={payeeEmail.value}
+                            onChange={handlePayeeEmailChange}
+                            error={payeeEmail.error}
+                            style={payeeEmail.error ? {} : {marginBottom: 20}}
+                            InputLabelProps={{
+                                classes: {
+                                    root: classes.cssLabel,
+                                    focused: classes.cssFocused
+                                }
+                            }}
+                            InputProps={{
+                                classes: {
+                                    root: classes.cssOutlinedInput,
+                                    focused: classes.cssFocused,
+                                    notchedOutline: classes.notchedOutline
+                                }
+                            }}
+                            />
+                        {payeeEmail.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
+                        <TextField
+                            id="outlined"
+                            label="Public Key"
+                            variant="outlined"
+                            value={payeePublicKey.value}
+                            onChange={handlePayeePublicKeyChange}
+                            error={payeePublicKey.error}
+                            style={payeePublicKey.error ? {} : {marginBottom: 20}}
+                            InputLabelProps={{
+                                classes: {
+                                    root: classes.cssLabel,
+                                    focused: classes.cssFocused
+                                }
+                            }}
+                            InputProps={{
+                                classes: {
+                                    root: classes.cssOutlinedInput,
+                                    focused: classes.cssFocused,
+                                    notchedOutline: classes.notchedOutline
+                                }
+                            }}
+                            />
+                        {payeePublicKey.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
+                        <TextField
+                            id="outlined"
+                            label="Nickname"
+                            variant="outlined"
+                            value={payeeNickname.value}
+                            onChange={handlePayeeNicknameChange}
+                            error={payeeNickname.error}
+                            style={payeeNickname.error ? {} : {marginBottom: 20}}
+                            InputLabelProps={{
+                                classes: {
+                                    root: classes.cssLabel,
+                                    focused: classes.cssFocused
+                                }
+                            }}
+                            InputProps={{
+                                classes: {
+                                    root: classes.cssOutlinedInput,
+                                    focused: classes.cssFocused,
+                                    notchedOutline: classes.notchedOutline
+                                }
+                            }}
+                            />
+                        {payeeNickname.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
+                        <label style={{fontFamily: "Open-Sans"}}>Currency</label>
+                        <Select 
+                            native
+                            value={payeeCurrency.value}
+                            label="Currency"
+                            onChange={handlePayeeCurrencyChange}
+                            className={classes.select}
+                            error={payeeCurrency.error}
+                            style={payeeCurrency.error ? {} : {marginBottom: 20}}
+                            input={
+                                <OutlinedInput
+                                    name="age"
+                                    id="outlined-age-simple"
+                                    classes={classes2}
+                                />
+                            } 
+                            >
+                                <option aria-label="None" value=""/>
+                                <option value="USD">USD</option>
+                        </Select>
+                        {payeeCurrency.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
+                        <Button variant="outlined" classes={{root: classes.button}} onClick={()=>{ addPayee() }}>Add</Button>
+                    </div>
+                </Box>
+            </Modal>
             <div style={{margin: 10}}>
                 {payeeList.length > 0 ?
                         payeeList.map((item) => {
-                            const amount = String(item.balance) + item.currency
+                            const amount = String(item.balance) + " " + item.currency
                             return (
                                 <Accordion className={classes.accord}>
                                     <AccordionSummary
@@ -379,7 +669,7 @@ export default function Payee() {
                                     >
                                     <Typography style={{fontFamily: "Open-Sans"}}>{item.name}</Typography>
                                     </AccordionSummary>
-                                    <AccordionDetails>
+                                    <AccordionDetails style={accordionStyle}>
                                         <div style={{display: "flex"}}>
                                             <div style={{marginRight: 20}}>
                                                 <Typography style={typo}>Nickname</Typography>
@@ -397,6 +687,7 @@ export default function Payee() {
                                 </Accordion>
                             )
                         }) : <div style={{fontFamily: "Open-Sans", textAlign: "center"}}>No Accounts</div>}
+                <Button variant="outlined" classes={{root: classes.button}} style={{marginTop: "20px"}} onClick={()=>{handleAddPayeeOpen()}}>Add Payee</Button>
             </div>
             <CustomBottomNavigation name="payee"/>
         </div>
