@@ -24,7 +24,7 @@ describe("hydra_coreless_banking", () => {
 
   //it("Update client name", async () => updateClientName("Fesw6UDS8ybLbsCSNiZhDyCfS3wi5RjYjPT324KzSY8n"));
 
-  //it("Topup to account", async () => testTopUpAccount("TFXxTahUD6MVLQ1CTyB8x77gqxcCRprWXhU8PqfmQac"));
+  //it("Topup to account", async () => testTopUpAccount("BzfmrHFyhpp8P26kwbwZ5vFZHMRhzDGPrnaXB9smNNnZ"));
   //it("Withdraw from account", async () => testWithdrawFromAccount());
 
   //it("Retrieve", async () => getAccountInfo());
@@ -35,12 +35,14 @@ describe("hydra_coreless_banking", () => {
   //it("Fund transfer", async () => testTransfer());
   //it("Fund transfer", async () => testTransfer());
 
-  //it("Retrieve", async () => getAccountInfo("TFXxTahUD6MVLQ1CTyB8x77gqxcCRprWXhU8PqfmQac"));
-  //it("Retrieve", async () => getAccountInfo("66cxZVY2XGBvsHCQD3AcCrNsSA3r5dc7x36A1PYGvucy"));
+  it("Cross Currency Transfer", async () => testCrossCurrencyTransfer());
+
+  it("Retrieve", async () => getAccountInfo("BzfmrHFyhpp8P26kwbwZ5vFZHMRhzDGPrnaXB9smNNnZ"));
+  it("Retrieve", async () => getAccountInfo("FDB1hbtgEQ8tFHHkpyCaV2oVoeXGorXqUrbgyTJYTWJS"));
 
   //it("Retrieve All", async () => getProgramAccounts());
 
-  it("Init", async () => init());
+  //it("Init", async () => init());
 });
 
 async function testInitAccount() {
@@ -100,10 +102,32 @@ async function testTransfer() {
   }).catch(error => console.log(error));
 }
 
+async function testCrossCurrencyTransfer() {
+  const payer = Keypair.fromSecretKey(new Uint8Array([
+    129, 75, 21, 37, 145, 244, 80, 165, 202, 244,
+    175, 18, 227, 71, 163, 212, 124, 102, 232, 163,
+    0, 159, 135, 211, 229, 170, 126, 230, 238, 242,
+    166, 241, 163, 90, 209, 3, 82, 237, 183, 212,
+    223, 211, 217, 79, 222, 6, 33, 194, 225, 174,
+    230, 233, 249, 157, 73, 104, 220, 211, 113, 176,
+    146, 152, 10, 142
+  ]));
+  const receiver = new PublicKey("FDB1hbtgEQ8tFHHkpyCaV2oVoeXGorXqUrbgyTJYTWJS");
+
+  await program.rpc.crossCurrencyTransfer("85", "3.08", "transfer cross currency", "REF002", {
+    accounts: {
+      fromAccount: payer.publicKey,
+      authority: solAccount.publicKey,
+      toAccount: receiver
+    },
+    signers: [solAccount, payer]
+  }).catch(error => console.log(error));
+}
+
 async function testTopUpAccount(pubkey) {
   const receiver = new PublicKey(pubkey);
 
-  await program.rpc.topup(new BN(100.05), "topup to account", "REF003", {
+  await program.rpc.topup("100", "topup to account", "REF003", {
     accounts: {
       hydraAccount: receiver
     }
@@ -120,16 +144,16 @@ async function testTopUpAccount(pubkey) {
 
 async function testWithdrawFromAccount() {
   const withdrawer = Keypair.fromSecretKey(new Uint8Array([
-    180, 68, 194, 97, 159, 192, 155, 125, 172, 206, 198,
-    161, 86, 98, 130, 119, 37, 51, 38, 86, 214, 93,
-    123, 204, 54, 156, 134, 21, 130, 116, 193, 112, 6,
-    185, 136, 204, 182, 183, 229, 53, 28, 69, 146, 129,
-    116, 175, 71, 147, 246, 150, 25, 205, 253, 182, 1,
-    91, 202, 150, 122, 200, 20, 103, 161, 25
-  ]));
+    129, 75, 21, 37, 145, 244, 80, 165, 202, 244,
+    175, 18, 227, 71, 163, 212, 124, 102, 232, 163,
+    0, 159, 135, 211, 229, 170, 126, 230, 238, 242,
+    166, 241, 163, 90, 209, 3, 82, 237, 183, 212,
+    223, 211, 217, 79, 222, 6, 33, 194, 225, 174,
+    230, 233, 249, 157, 73, 104, 220, 211, 113, 176,
+    146, 152, 10, 142]));
 
   try {
-    await program.rpc.withdraw(new BN(80), "withdraw money", "REF004", {
+    await program.rpc.withdraw("5", "withdraw money", "REF004", {
       accounts: {
         hydraAccount: withdrawer.publicKey,
         authority: solAccount.publicKey,

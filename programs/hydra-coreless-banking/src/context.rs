@@ -37,9 +37,3 @@ pub struct Transfer<'info> {
     #[account(mut)]
     pub to_account: Account<'info, HydraAccount>,
 }
-
-#[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(mut)]
-    pub hydra_account: Account<'info, HydraAccount>,
-}
