@@ -531,6 +531,7 @@ name = "hydra-coreless-banking"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "rust_decimal",
 ]
 
 [[package]]
@@ -767,6 +768,17 @@ name = "regex-syntax"
 version = "0.6.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
+
+[[package]]
+name = "rust_decimal"
+version = "1.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0f1028de22e436bb35fce070310ee57d57b5e59ae77b4e3f24ce4773312b813"
+dependencies = [
+ "arrayvec",
+ "num-traits",
+ "serde",
+]
 
 [[package]]
 name = "rustc_version"

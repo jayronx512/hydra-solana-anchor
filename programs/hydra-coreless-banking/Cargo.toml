@@ -16,3 +16,4 @@ default = []
 
 [dependencies]
 anchor-lang = "0.17.0"
+rust_decimal = "1.16.0"
