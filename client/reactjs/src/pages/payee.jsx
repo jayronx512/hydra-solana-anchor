@@ -367,68 +367,13 @@ export default function Payee() {
        return result;
     }
 
-    function getCurrency(publicKeyString, sender) {
-        setLoading(true)
-        let newAccount = []
-        let promises = []
-        promises.push(
-        axios.get(`/account/${publicKeyString}`)
-            .then(response => {
-                newAccount.push(response)
-            })
-            .catch(error => {
-                console.log(error.message)
-            })
-        )
-        Promise.all(promises)
-        .then(() => {
-            for(let i=0; i<newAccount.length; i++) {
-                let temporaryAccount = newAccount[i]
-                if (sender) {
-                    console.log("----Sender----")
-                    console.log(temporaryAccount.data.currency)
-                    setFromCurrency(temporaryAccount.data.currency)
-                    return temporaryAccount.data.currency
-                } else {
-                    console.log("----Receiver----")
-                    console.log(temporaryAccount.data.currency)
-                    setToCurrency(temporaryAccount.data.currency)
-                    return temporaryAccount.data.currency
-                }
-            }
-        })
-        .catch(error => {
-            alert("Failed to retrieve account data: " + error)
-        })
-        setLoading(false)
-    }
-
-    function getCurrencyForTransfer() {
+    async function transfer() {
         let errorMessage = "";
         if (fromPublicKey.value == "") {
             errorMessage += "You must select an account to transfer from!\n"
         }
         if (toPublicKey.value == "") {
-            errorMessage += "You must key in the receipient's public key!\n"
-        }
-        if (solanaSecretKey == "" || solanaSecretKey == null) {
-            errorMessage += "No solana account found!\n"
-        }
-        if (errorMessage != "") {
-            alert(errorMessage)
-            return
-        }
-        let keys = fromPublicKey.value.split(" ")
-        getCurrency(toPublicKey.value, false)
-        getCurrency(keys[0], true)
-        
-        return
-    }
-
-    async function transfer() {
-        let errorMessage = "";
-        if (fromPublicKey.value == "") {
-            errorMessage += "You must select an account to transfer from!\n"
+            errorMessage += "Could not detect receiver's public key!\n"
         }
         if (amount.value == "" || amount.value < 0) {
             errorMessage += "Invalid amount!\n"
@@ -444,36 +389,15 @@ export default function Payee() {
             alert(errorMessage)
             return
         }
-
-        let secondErrorMessage = ""
         setLoading(true)
-        const toAccount = new PublicKey(toPublicKey.value)
         let keys = fromPublicKey.value.split(" ")
-        const fromAccount = new PublicKey(keys[0])
         const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)))
         const senderAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])))
-        
-        if (toCurrency == "" || fromCurrency == "") {
-            secondErrorMessage += "Failed to get account's currency!\n"
-        }
 
-        if (secondErrorMessage != "") {
-            alert(secondErrorMessage)
-            setLoading(false)
-            return
-        }
-
-        if (toCurrency != fromCurrency) {
-            var confirm=window.confirm("Cross currency detected! " + fromCurrency + " -> " + toCurrency + "\nDaily fx rate will be applied if you wish to continue.")
-            if(!confirm){return}
-        }
-        
         const formData = {
             amount: amount.value,
             sender: base64.encode(senderAccount.secretKey),
-            sender_currency: fromCurrency,
-            receiver: toPublicKey.value,
-            receiver_currency: toCurrency,
+            receiver: toPublicKey,
             remark: remark.value,
             referrence_number: referenceNumber.value,
             payer: base64.encode(solAccount.secretKey),

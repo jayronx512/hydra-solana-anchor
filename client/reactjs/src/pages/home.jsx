@@ -12,6 +12,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import PaymentIcon from '@mui/icons-material/Payment';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import RedeemIcon from '@mui/icons-material/Redeem';
+import axios from 'axios';
 
 import { NodeWallet } from '@project-serum/anchor/dist/cjs/provider';
 import idl from '../idl.json';
@@ -57,47 +58,74 @@ export default function Home() {
 
     useEffect(async () => {
         setLoading(true)
-        let account = JSON.parse(reactLocalStorage.get("account"))
-        let newCount = 0
-        let newAccount = []
-        for (let i=0; i<account.accountList.length; i++) {
-            let individualAccount = account.accountList[i]
-            try {
-                if (account.solanaAccount.secretKey != "") {
-                    const provider = await getProvider(account.solanaAccount.secretKey);
-                    const program = new Program(idl, programID, provider);
-                    let publicKey = new PublicKey(individualAccount.publicKey)
-                    let receiverAccount = await program.account.hydraAccount.fetch(publicKey);
-                    individualAccount.balance = receiverAccount.balance.words[0]
-                    individualAccount.transactionList = receiverAccount.transactions
-                    newCount += receiverAccount.transactions.length
-                    newAccount.push(individualAccount)
-                }
-            } catch(error) {
-                alert("Failed to get account details: " + error)
-            }
-        }
-        account.accountList = newAccount
-        setSolanaPublicKey(account.solanaAccount.publicKey)
-        setSolanaSecretKey(account.solanaAccount.secretKey)
-        setTransactionCount(newCount)
-        setAccountList(account.accountList)
-        setAccount(account)
+        let accountStorage = JSON.parse(reactLocalStorage.get("account"))
+        setSolanaPublicKey(accountStorage.solanaAccount.publicKey)
+        setSolanaSecretKey(accountStorage.solanaAccount.secretKey)
+        setAccount(accountStorage)
+        updateAllAccount(accountStorage)
         setLoading(false)
     }, [])
 
-    async function getProvider(secretKey, newAccount = false) {
-        const clientAccount = Keypair.fromSecretKey(newAccount ? secretKey : new Uint8Array(JSON.parse(secretKey)));
-        const wallet = new NodeWallet(clientAccount);
-        const connection = new Connection(network, opts.preflightCommitment);
-        const provider = new Provider(
-            connection, wallet, opts.preflightCommitment
-        )
-        return provider;
+    function updateAllAccount(accountStorage) {
+        setLoading(true)
+        let newAccount = []
+        let promises = []
+        for (let i=0; i<accountStorage.accountList.length; i++) {
+            let publicKey = accountStorage.accountList[i].publicKey
+            promises.push(
+            axios.get(`/account/${publicKey}`)
+                .then(response => {
+                    newAccount.push(response)
+                })
+                .catch(error => {
+                    console.log(error.message)
+                })
+            )
+        }
+        let newAccountList = []
+        Promise.all(promises)
+        .then(() => {
+            let count = 0;
+            for(let i=0; i<newAccount.length; i++) {
+                let temporaryAccount = newAccount[i]
+                console.log(temporaryAccount)
+                let publicKey = accountStorage.accountList[i].publicKey
+                let secretKey = accountStorage.accountList[i].secretKey
+                let newObject = {
+                    name: temporaryAccount.data.clientName,
+                    currency: temporaryAccount.data.currency,
+                    publicKey: publicKey,
+                    secretKey: secretKey,
+                    balance: temporaryAccount.data.balance,
+                    transactionList: temporaryAccount.data.transactions
+                }
+                count += temporaryAccount.data.transactions.length
+                newAccountList.push(newObject)
+            }
+            if (newAccountList.length > 0) {
+                console.log("Account updated!")
+                let temporaryAccount = accountStorage
+                temporaryAccount.accountList = newAccountList
+                setAccountList(newAccountList)
+                setTransactionCount(count)
+                setAccount(temporaryAccount)
+                reactLocalStorage.set("account", JSON.stringify(temporaryAccount))
+            }
+        })
+        .catch(error => {
+            alert("Failed to retrieve account data: " + error)
+        })
+        setLoading(false)
     }
 
     async function handleRefresh() {
-
+        setLoading(true)
+        let accountStorage = JSON.parse(reactLocalStorage.get("account"))
+        setSolanaPublicKey(accountStorage.solanaAccount.publicKey)
+        setSolanaSecretKey(accountStorage.solanaAccount.secretKey)
+        setAccount(accountStorage)
+        updateAllAccount(accountStorage)
+        setLoading(false)
     }
 
     return(
