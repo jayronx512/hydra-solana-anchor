@@ -70,17 +70,38 @@ export default function Admin() {
         setSolanaPublicKey(account.solanaAccount.publicKey)
         setSolanaSecretKey(account.solanaAccount.secretKey)
         setAccount(account)
-        if (account.solanaAccount.secretKey != "") {
-            try {
-                const provider = await getProvider(account.solanaAccount.secretKey);
-                const program = new Program(idl, programID, provider);
-                let allAccountList = await program.account.hydraAccount.all();
-                setAllAccountList(allAccountList)
-                console.log(allAccountList)
-            } catch(error) {
-                alert("Failed to get all accounts: " + error)
+        const connection = new Connection(network, opts.preflightCommitment);
+        let temporaryAllAccountList = []
+        try {
+            const provider = await getProvider(account.solanaAccount.secretKey);
+            const program = new Program(idl, programID, provider);
+            let allAccountList = await connection.getProgramAccounts(programID);
+            for (let getAccount of allAccountList) {
+                try {
+                let temporaryAccount = await program.coder.accounts.decode(program.account.hydraAccount._idlAccount.name, getAccount.account.data)
+                temporaryAllAccountList.push(temporaryAccount)
+                } catch(error) {
+                    //do nothing, ignore all data
+                }
             }
+            setAllAccountList(temporaryAllAccountList)
+            // setAllAccountList(temporaryAllAccountList)
+            
+        } catch(error) {
+            alert("Failed to retrieve all accounts: " + error)
         }
+        
+        // if (account.solanaAccount.secretKey != "") {
+        //     try {
+        //         const provider = await getProvider(account.solanaAccount.secretKey);
+        //         const program = new Program(idl, programID, provider);
+        //         let allAccountList = await program.account.hydraAccount.all();
+        //         setAllAccountList(allAccountList)
+        //         console.log(allAccountList)
+        //     } catch(error) {
+        //         alert("Failed to get all accounts: " + error)
+        //     }
+        // }
        setLoading(false)
     }, [])
 
@@ -152,10 +173,10 @@ export default function Admin() {
                                 },
                             }}
                             >
-                            <Paper elevation={3} style={index % 2 == 0 ? {fontFamily: "Open-Sans", padding: 20} : {fontFamily: "Open-Sans", padding: 20, backgroundColor: "#ffcdd2"}} onClick={()=>{setTransactionList(item.account.transactions); handleOpen()}}>
+                            <Paper elevation={3} style={index % 2 == 0 ? {fontFamily: "Open-Sans", padding: 20} : {fontFamily: "Open-Sans", padding: 20, backgroundColor: "#ffcdd2"}} onClick={()=>{setTransactionList(item.transactions); handleOpen()}}>
                                 <div style={{display: "flex", justifyContent: "space-around", alignItems: "center"}}>
-                                    <div style={{fontSize: "1rem"}}><strong>{item.account.clientName}</strong></div>
-                                    <div style={{fontSize: "2rem"}}>{item.account.balance.words[0]} {item.account.currency}</div>
+                                    <div style={{fontSize: "1rem"}}><strong>{item.clientName}</strong></div>
+                                    <div style={{fontSize: "2rem"}}>{item.balance.words[0]} {item.currency}</div>
                                 </div>
                                 <hr/>
                                 <br/>
@@ -163,15 +184,15 @@ export default function Admin() {
                                     <table>
                                         <tr>
                                             <td>Email</td>
-                                            <td>: {item.account.clientEmail}</td>
+                                            <td>: {item.clientEmail}</td>
                                         </tr>
                                         <tr>
                                             <td>ID Type</td>
-                                            <td>: {item.account.clientIdentificationType}</td>
+                                            <td>: {item.clientIdentificationType}</td>
                                         </tr>
                                         <tr>
                                             <td>ID No</td>
-                                            <td>: {item.account.clientIdentificationNumber}</td>
+                                            <td>: {item.clientIdentificationNumber}</td>
                                         </tr>
                                     </table>
                                 </div>

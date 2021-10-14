@@ -3,6 +3,20 @@
   "name": "hydra_coreless_banking",
   "instructions": [
     {
+      "name": "initialize",
+      "accounts": [],
+      "args": [
+        {
+          "name": "amount",
+          "type": "string"
+        },
+        {
+          "name": "fxRate",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "createAccount",
       "accounts": [
         {
@@ -11,7 +25,7 @@
           "isSigner": true
         },
         {
-          "name": "user",
+          "name": "authority",
           "isMut": true,
           "isSigner": true
         },
@@ -53,28 +67,17 @@
       ]
     },
     {
-      "name": "reset",
-      "accounts": [
-        {
-          "name": "fromAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "toAccount",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "transfer",
       "accounts": [
         {
           "name": "fromAccount",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
         },
         {
           "name": "toAccount",
@@ -98,7 +101,7 @@
       ]
     },
     {
-      "name": "debit",
+      "name": "topup",
       "accounts": [
         {
           "name": "hydraAccount",
@@ -127,7 +130,12 @@
         {
           "name": "hydraAccount",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
         }
       ],
       "args": [
@@ -154,6 +162,10 @@
         "fields": [
           {
             "name": "pubkey",
+            "type": "publicKey"
+          },
+          {
+            "name": "authority",
             "type": "publicKey"
           },
           {
@@ -220,6 +232,13 @@
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 300,
+      "name": "InsufficientBalance",
+      "msg": "Unable to complete transaction due to insufficient balance."
     }
   ],
   "metadata": {

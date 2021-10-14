@@ -1,6 +1,6 @@
 import React, { useState} from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import Hydra from '../asset/Hydra_logo.png'
+import Infinity from '../asset/infinity.png'
 
 import SettingsIcon from '@mui/icons-material/Settings';
 import Modal from '@mui/material/Modal';
@@ -69,14 +69,14 @@ export default function CustomTopNavigation(initState) {
                     position: "fixed",
                     width: "100%",
                     top: 0,
-                    backgroundColor: "black",
+                    backgroundColor: "#3699FF",
                     height: "60px",
                     display: "flex",
                     justifyContent: initState.loginPage ? "center" : "space-between"
                 }}>
                 {initState.loginPage ? null :
                     <div style={{zIndex: 1000, width: "30%"}}>
-                        <img src={Hydra} style={{ margin: 5, height: "80%"}} />
+                        <img src={Infinity} style={{ margin: 5, height: "80%"}} />
                     </div>
                 }
                 <div style={{

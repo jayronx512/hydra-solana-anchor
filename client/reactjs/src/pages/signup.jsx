@@ -16,9 +16,16 @@ const useStyles = makeStyles({
         fontFamily: "Open-Sans",
     },
     button: {
-        backgroundColor: "black",
+        backgroundColor: "#3699FF",
         color: "white",
         fontFamily: "Open-Sans",
+        width: "100%"
+    },
+    button2: {
+        backgroundColor: "#b23b3b",
+        color: "white",
+        fontFamily: "Open-Sans",
+        width: "100%"
     },
     select: {
         "& $notchedOutline": {
@@ -30,6 +37,7 @@ const useStyles = makeStyles({
     },
     cssOutlinedInput: {
         fontFamily: "Open-Sans",
+        zIndex: -1000,
         '&$cssFocused $notchedOutline': {
             borderColor: "yellow"
         }
@@ -45,8 +53,15 @@ const useStyles = makeStyles({
     }
 })
 
+const useStyles2 = makeStyles({
+    root: {
+        zIndex: -1000
+    }
+})
+
 export default function SignUp() {
     const classes = useStyles();
+    const classes2 = useStyles2();
     const[username, setUsername] = useState({value: "", error: true});
     const[password, setPassword] = useState({value: "", error: true});
     const[confirmPassword, setConfirmPassword] = useState({value: "", error: true});
@@ -180,6 +195,7 @@ export default function SignUp() {
                                 label="Username"
                                 variant="outlined"
                                 value={username.value}
+                                className={classes2.root}
                                 onChange={handleUsernameChange}
                                 error={username.error}
                                 style={username.error ? {} : {marginBottom: 20}}
@@ -203,6 +219,7 @@ export default function SignUp() {
                                 label="Password"
                                 type="password"
                                 variant="outlined"
+                                className={classes2.root}
                                 value={password.value}
                                 onChange={handlePasswordChange}
                                 error={password.error}
@@ -340,7 +357,12 @@ export default function SignUp() {
                                 }}
                             />
                             {email.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
-                            <Button variant="outlined" classes={{root: classes.button}} onClick={()=> signUp()}>Sign Up</Button>
+                            <div style={{display: "flex", flexDirection: "row", width: "100%", justifyContent: "space-between"}}>
+                                <Button variant="outlined" classes={{root: classes.button}} onClick={()=> signUp()}>Sign Up</Button>
+                                <div style={{width: "5vw"}}></div>
+                                <Button variant="outlined" classes={{root: classes.button2}} onClick={()=> {history.push("/")}}>Cancel</Button>
+                            </div>
+                            
                         </div>
                 </div>
             </div>

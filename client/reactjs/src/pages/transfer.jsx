@@ -29,10 +29,10 @@ const network = "https://api.devnet.solana.com";
 const useStyles = makeStyles({
     root: {
         width: "100%",
-        marginTop: 20
+        marginTop: 20,
     },
     button: {
-        backgroundColor: "black",
+        backgroundColor: "#3699FF",
         color: "white",
         fontFamily: "Open-Sans",
         width: "100%",
@@ -65,16 +65,27 @@ const useStyles = makeStyles({
 const useStyles2 = makeStyles({
     root: {
         width: "100%",
+        zIndex: -1000,
+    }
+})
+
+const useStyles3 = makeStyles({
+    root: {
+        width: "100%",
+        zIndex: -1000,
+        marginTop: 20
     }
 })
 
 export default function Transfer() {
     const classes = useStyles()
     const classes2 = useStyles2()
+    const classes3 = useStyles3()
     const[loading, setLoading] = useState(false)
     const[fromPublicKey, setFromPublicKey] = useState({value: "", error: true})
     const [amount, setAmount] = useState({value: 0, error: true})
     const [remark, setRemark] = useState({value: "", error: false})
+    const [referenceNumber, setReferenceNumber] = useState({value: "", error: true})
     const [toPublicKey, setToPublicKey] = useState({value: "", error: true})
     const[account, setAccount] = useState({})
     const[accountList, setAccountList] = useState([])
@@ -154,6 +165,22 @@ export default function Transfer() {
         })
     }
 
+    const handleReferenceNumberChange = (e) => {
+        if (e.target.value != "") {
+            setReferenceNumber({
+                ...referenceNumber,
+                error:false,
+                value: e.target.value
+            })
+        } else {
+            setReferenceNumber({
+                ...referenceNumber,
+                error: true,
+                value: ""
+            })
+        }
+    }
+
     const transactionReferenceGenerator = (length = 10) => {
         var result           = '';
         var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -179,6 +206,9 @@ export default function Transfer() {
         if (solanaSecretKey == "" || solanaSecretKey == null) {
             errorMessage += "No solana account found!\n"
         }
+        if (referenceNumber.value == "") {
+            errorMessage += "Reference Number cannot be empty!\n"
+        }
 
         if (errorMessage != "") {
             alert(errorMessage)
@@ -186,25 +216,31 @@ export default function Transfer() {
         }
         setLoading(true)
         const toAccount = new PublicKey(toPublicKey.value)
-        const fromAccount = new PublicKey(fromPublicKey.value)
+        let keys = fromPublicKey.value.split(" ")
+        const fromAccount = new PublicKey(keys[0])
         try {
+            const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)));
+            const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])));
             const provider = await getProvider(solanaSecretKey);
             const program = new Program(idl, programID, provider);
             const transactionReferenceNumber = transactionReferenceGenerator();
-
+            setLoading(false)
             await program.rpc.transfer(
                 new BN(amount.value),
                 remark.value,
-                transactionReferenceNumber, {
+                referenceNumber.value, {
                 accounts: {
                     fromAccount: fromAccount,
+                    authority: solAccount.publicKey,
                     toAccount: toAccount
-                }
+                },
+                signers: [solAccount, payer]
             })
             setAmount({value: 0, error: true})
             setToPublicKey({value: "", error: true})
             setFromPublicKey({value: "", error: true})
             setRemark({values: "", error: formLabelClasses})
+            setReferenceNumber({value: "", error: true})
             alert("Successfully transfer!")
         } catch(error) {
             alert("Transfer fund error: " + error )
@@ -217,8 +253,8 @@ export default function Transfer() {
         <div>
             {loading ? <Loading /> : null}
             <CustomTopNavigation title={"Transfer"}/>
-            <div style={{margin: "50px 10px 10px 10px"}}>
-            <label style={{fontFamily: "Open-Sans"}}>From Account</label>
+            <div style={{margin: "30px 10px 10px 10px", minHeight: "120vh", overflow: "scroll"}}>
+                <label style={{fontFamily: "Open-Sans"}}>From Account</label>
                 <Select 
                     native
                     value={fromPublicKey.value}
@@ -226,7 +262,7 @@ export default function Transfer() {
                     onChange={handleFromPublicKeyChange}
                     className={classes.select}
                     error={fromPublicKey.error}
-                    style={fromPublicKey.error ? {} : {marginBottom: 20}}
+                    style={fromPublicKey.error ? {} : {marginBottom: 10}}
                     input={
                         <OutlinedInput
                             name="age"
@@ -238,7 +274,7 @@ export default function Transfer() {
                         <option aria-label="None" value=""/>
                         {accountList.map((item)=>{
                             return(
-                                <option value={item.publicKey}>{item.name}</option>
+                                <option value={item.publicKey + " " + item.secretKey}>{item.name}</option>
                             )
                         })}
 
@@ -250,10 +286,10 @@ export default function Transfer() {
                     label="To Public Key"
                     variant="outlined"
                     value={toPublicKey.value}
-                    className={classes.root}
+                    className={classes3.root}
                     onChange={handleToPublicKeyChange}
                     error={toPublicKey.error}
-                    style={toPublicKey.error ? {} : {marginBottom: 20}}
+                    style={toPublicKey.error ? {} : {marginBottom: 10}}
                     InputLabelProps={{
                         classes: {
                             root: classes.cssLabel,
@@ -275,11 +311,11 @@ export default function Transfer() {
                     id="outlined-required"
                     label="Amount"
                     variant="outlined"
-                    className={classes.root}
+                    className={classes3.root}
                     value={amount.value}
                     onChange={handleAmountChange}
                     error={amount.error}
-                    style={amount.error ? {} : {marginBottom: 20}}
+                    style={amount.error ? {} : {marginBottom: 10}}
                     InputLabelProps={{
                         classes: {
                             root: classes.cssLabel,
@@ -297,13 +333,37 @@ export default function Transfer() {
                 {amount.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
                 <TextField
                     id="outlined"
+                    label="Reference Number"
+                    variant="outlined"
+                    value={referenceNumber.value}
+                    className={classes.root}
+                    onChange={handleRemarkChange}
+                    error={referenceNumber.error}
+                    style={referenceNumber.error ? {} : {marginBottom: 10}}
+                    InputLabelProps={{
+                        classes: {
+                            root: classes.cssLabel,
+                            focused: classes.cssFocused
+                        }
+                    }}
+                    InputProps={{
+                        classes: {
+                            root: classes.cssOutlinedInput,
+                            focused: classes.cssFocused,
+                            notchedOutline: classes.notchedOutline
+                        }
+                    }}
+                />
+                {referenceNumber.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
+                <TextField
+                    id="outlined"
                     label="Remark"
                     variant="outlined"
                     value={remark.value}
                     className={classes.root}
                     onChange={handleRemarkChange}
                     error={remark.error}
-                    style={remark.error ? {} : {marginBottom: 20}}
+                    style={remark.error ? {} : {marginBottom: 10}}
                     InputLabelProps={{
                         classes: {
                             root: classes.cssLabel,

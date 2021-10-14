@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { makeStyles, withStyles } from '@material-ui/core/styles';
 import {reactLocalStorage} from 'reactjs-localstorage';
+import { colorList } from '../data.js'
 import history from '../history';
 import Loading from '../components/loading';
 import MuiAccordion from "@material-ui/core/Accordion";
@@ -25,6 +26,7 @@ import {
     Program, Provider, web3
   } from '@project-serum/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
+import PullToRefresh from 'react-simple-pull-to-refresh';
 
 const { SystemProgram, Keypair } = web3;
 const opts = {
@@ -43,7 +45,7 @@ const useStyles = makeStyles({
         marginBottom: 20
     },
     button: {
-        backgroundColor: "black",
+        backgroundColor: "#3699FF",
         color: "white",
         fontFamily: "Open-Sans",
         width: "100%",
@@ -111,9 +113,10 @@ expanded: {}
 
 const AccordionSummary = withStyles({
     root: {
-        backgroundColor: 'black',
-        color: "white",
+        // backgroundColor: 'black',
+        color: "black",
         fontFamily: "Open-Sans",
+        borderRadius: "10px",
         // borderBottom: '1px solid rgba(0, 0, 0, .125)',
         marginBottom: -1,
         minHeight: 56,
@@ -153,7 +156,7 @@ const typo = {
 }
 
 const accordionStyle = {
-    backgroundColor: "#cfd8dc",
+    backgroundColor: "white",
     marginLeft: "10px",
     marginRight: "10px",
     border: "1px solid black",
@@ -170,6 +173,7 @@ export default function Payee() {
     const [accountList, setAccountList] = useState([])
     const [fromPublicKey, setFromPublicKey] = useState({value: "", error: true})
     const [amount, setAmount] = useState({value: 0, error: true})
+    const [referenceNumber, setReferenceNumber] = useState({value: "", error: true})
     const [remark, setRemark] = useState({value: "", error: false})
     const [toPublicKey, setToPublicKey] = useState("")
     const[solanaPublicKey, setSolanaPublicKey] = useState("")
@@ -209,6 +213,22 @@ export default function Payee() {
         } else {
             setFromPublicKey({
                 ...fromPublicKey,
+                error: true,
+                value: ""
+            })
+        }
+    }
+
+    const handleReferenceNumberChange = (e) => {
+        if (e.target.value != "") {
+            setReferenceNumber({
+                ...referenceNumber,
+                error:false,
+                value: e.target.value
+            })
+        } else {
+            setReferenceNumber({
+                ...referenceNumber,
                 error: true,
                 value: ""
             })
@@ -351,6 +371,9 @@ export default function Payee() {
         if (solanaSecretKey == "" || solanaSecretKey == null) {
             errorMessage += "No solana account found!\n"
         }
+        if (referenceNumber.value == "") {
+            errorMessage += "Reference Number cannot be empty!\n"
+        }
 
         if (errorMessage != "") {
             alert(errorMessage)
@@ -361,23 +384,27 @@ export default function Payee() {
         let keys = fromPublicKey.value.split(" ")
         const fromAccount = new PublicKey(keys[0])
         try {
+            const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)));
+            const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])));
             const provider = await getProvider(solanaSecretKey);
             const program = new Program(idl, programID, provider);
-
-            const transactionReferenceNumber = transactionReferenceGenerator();
+            setLoading(false)
             await program.rpc.transfer(
                 new BN(amount.value),
                 remark.value,
-                transactionReferenceNumber, {
+                referenceNumber.value, {
                 accounts: {
                     fromAccount: fromAccount,
+                    authority: solAccount.publicKey,
                     toAccount: toAccount
-                }
+                },
+                signers: [solAccount, payer]
             })
             setRemark({value: "", error: false})
             setAmount({value: 0, error: true})
             setToPublicKey({value: "", error: true})
             setFromPublicKey({value: "", error: true})
+            setReferenceNumber({value: "", error: true})
             alert("Successfully transfer!")
         } catch(error) {
             alert("Failed to transfer fund to payee: " + error)
@@ -437,10 +464,22 @@ export default function Payee() {
         setLoading(false)
         return
     }
+
+    async function handleRefresh() {
+        setLoading(true)
+        let account = JSON.parse(reactLocalStorage.get("account"))
+        setSolanaPublicKey(account.solanaAccount.publicKey)
+        setSolanaSecretKey(account.solanaAccount.secretKey)
+        setAccount(account)
+        setPayeeList(account.payeeList)
+        setAccountList(account.accountList)
+        setLoading(false)
+    }
     
 
     return (
-        <div>
+        <PullToRefresh onRefresh={handleRefresh}>
+            <div style={{minHeight: "100vh"}}>
             {loading ? <Loading /> : null}
             <CustomTopNavigation title={"Payee"}/>
             <Modal
@@ -502,6 +541,29 @@ export default function Payee() {
                                 }}
                             />
                             {amount.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
+                            <TextField
+                                id="outlined"
+                                label="Reference Number"
+                                variant="outlined"
+                                value={referenceNumber.value}
+                                onChange={handleReferenceNumberChange}
+                                error={referenceNumber.error}
+                                style={referenceNumber.error ? {} : {marginBottom: 20}}
+                                InputLabelProps={{
+                                    classes: {
+                                        root: classes.cssLabel,
+                                        focused: classes.cssFocused
+                                    }
+                                }}
+                                InputProps={{
+                                    classes: {
+                                        root: classes.cssOutlinedInput,
+                                        focused: classes.cssFocused,
+                                        notchedOutline: classes.notchedOutline
+                                    }
+                                }}
+                            />
+                            {referenceNumber.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
                             <TextField
                                 id="outlined"
                                 label="Remark"
@@ -648,48 +710,50 @@ export default function Payee() {
                             >
                                 <option aria-label="None" value=""/>
                                 <option value="USD">USD</option>
+                                <option value="SGD">SGD</option>
                         </Select>
                         {payeeCurrency.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}
                         <Button variant="outlined" classes={{root: classes.button}} onClick={()=>{ addPayee() }}>Add</Button>
                     </div>
                 </Box>
             </Modal>
-            <div style={{margin: 10}}>
-                {payeeList.length > 0 ?
-                        payeeList.map((item) => {
-                            const amount = String(item.balance) + " " + item.currency
-                            return (
-                                <Accordion className={classes.accord}>
-                                    <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon style={{fill: "white"}} />}
-                                    aria-controls="panel1a-content"
-                                    id="panel1a-header"
-                                    onClick={()=>{
-                                    }}
-                                    >
-                                    <Typography style={{fontFamily: "Open-Sans"}}>{item.name}</Typography>
-                                    </AccordionSummary>
-                                    <AccordionDetails style={accordionStyle}>
-                                        <div style={{display: "flex"}}>
-                                            <div style={{marginRight: 20}}>
-                                                <Typography style={typo}>Nickname</Typography>
-                                                <Typography style={typo}>Email</Typography>
-                                                <Typography style={typo}>Currency</Typography>
+            
+                <div style={{margin: 10, }}>
+                    {payeeList.length > 0 ?
+                            payeeList.map((item) => {
+                                const amount = String(item.balance) + " " + item.currency
+                                return (
+                                    <Accordion className={classes.accord}>
+                                        <AccordionSummary
+                                            style={{backgroundColor: colorList[Math.floor(Math.random() * colorList.length)]}}
+                                            expandIcon={<ExpandMoreIcon style={{fill: "white"}} />}
+                                            aria-controls="panel1a-content"
+                                            id="panel1a-header"
+                                        >
+                                        <Typography style={{fontFamily: "Open-Sans"}}><strong>{item.name}</strong></Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails style={accordionStyle}>
+                                            <div style={{display: "flex"}}>
+                                                <div style={{marginRight: 20}}>
+                                                    <Typography style={typo}>Nickname</Typography>
+                                                    <Typography style={typo}>Email</Typography>
+                                                    <Typography style={typo}>Currency</Typography>
+                                                </div>
+                                                <div>
+                                                    <Typography style={typo}>: {item.nickname}</Typography>
+                                                    <Typography style={typo}>: {item.email}</Typography>
+                                                    <Typography style={typo}>: {item.currency}</Typography>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <Typography style={typo}>: {item.nickname}</Typography>
-                                                <Typography style={typo}>: {item.email}</Typography>
-                                                <Typography style={typo}>: {item.currency}</Typography>
-                                            </div>
-                                        </div>
-                                        <Button variant="outlined" classes={{root: classes.button}} onClick={()=> {setToPublicKey(item.publicKey); handleOpen()}}>Transfer</Button>
-                                    </AccordionDetails>
-                                </Accordion>
-                            )
-                        }) : <div style={{fontFamily: "Open-Sans", textAlign: "center"}}>No Accounts</div>}
-                <Button variant="outlined" classes={{root: classes.button}} style={{marginTop: "20px"}} onClick={()=>{handleAddPayeeOpen()}}>Add Payee</Button>
-            </div>
-            <CustomBottomNavigation name="payee"/>
+                                            <Button variant="outlined" classes={{root: classes.button}} onClick={()=> {setToPublicKey(item.publicKey); handleOpen()}}>Transfer</Button>
+                                        </AccordionDetails>
+                                    </Accordion>
+                                )
+                            }) : <div style={{fontFamily: "Open-Sans", textAlign: "center"}}>No Accounts</div>}
+                    <Button variant="outlined" classes={{root: classes.button}} style={{marginTop: "20px"}} onClick={()=>{handleAddPayeeOpen()}}>Add Payee</Button>
+                </div>
+            <CustomBottomNavigation name="payee"/> 
         </div>
+        </PullToRefresh>
     )
 }

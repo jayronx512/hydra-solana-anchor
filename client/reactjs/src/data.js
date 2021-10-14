@@ -89,3 +89,22 @@ export let accountData = [
         ]
     }
 ]
+
+export let colorList = [
+    "#42a4f5",
+    "#5c6bc0",
+    "#7e57c2",
+    "#26a69a",
+    "#d4e157",
+    "#eeff41",
+    "#b2ff59",
+    "#69f0ae",
+    "#d4e157",
+    "#84ffff",
+    "#80cbc4",
+    "#80deea",
+    "#81d4fa",
+    "#c5cae9",
+    "#ffe57f",
+    "#ffccbc"
+]

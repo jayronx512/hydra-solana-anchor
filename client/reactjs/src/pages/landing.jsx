@@ -8,6 +8,7 @@ import { accountData } from '../data.js'
 import TextField from '@material-ui/core/TextField'
 import Button from '@material-ui/core/Button'
 import Hydra from '../asset/hydra.png'
+import Infinity from '../asset/infinity2.png'
 
 // import {
 //     Program, Provider, web3
@@ -26,7 +27,7 @@ import Hydra from '../asset/hydra.png'
 
 const useStyles = makeStyles({
     root: {
-        backgroundColor: "black",
+        backgroundColor: "#3699FF",
         color: "white",
         fontFamily: "Open-Sans",
         width: "100%",
@@ -44,7 +45,7 @@ export default function Landing() {
             if (accountData[i].username == username && accountData[i].password == password) {
                 reactLocalStorage.set("account", JSON.stringify(accountData[i]))
                 setAccount(accountData[i])
-                history.push('/dashboard')
+                history.push('/home')
                 return
             }
         }
@@ -60,9 +61,9 @@ export default function Landing() {
             <CustomTopNavigation title={"Login"} loginPage={true}/>
             <div style={{margin: 10}}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-evenly"}}>
-                    
-                    <div style={{height: "20vh"}}></div>
-                    <img src={Hydra} style={{height: "20vh", marginBottom: "20vh"}} />
+                    <h1 style={{fontFamily: "Open-Sans", marginTop: "10vh", marginBottom: "15vh"}}>Infinitude</h1>
+                    <img src={Infinity} style={{height: "10vh", marginBottom: "2vh"}} />
+                    <h4 style={{fontFamily: "Open-Sans", marginBottom: "10vh"}}>It's coreless</h4>
                     <div style={{display: "flex", flexDirection: "column", width: "80%"}}>
                         <TextField
                             required
