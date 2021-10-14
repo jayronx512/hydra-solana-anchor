@@ -1,12 +1,12 @@
 [package]
-name = "hydra-solana-anchor"
+name = "hydra-coreless-banking"
 version = "0.1.0"
-description = "Created with Anchor"
+description = "Hydra Coreless Banking"
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "hydra_solana_anchor"
+name = "hydra_coreless_banking"
 
 [features]
 no-entrypoint = []
@@ -16,3 +16,4 @@ default = []
 
 [dependencies]
 anchor-lang = "0.17.0"
+rust_decimal = "1.16.0"

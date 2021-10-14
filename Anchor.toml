@@ -1,5 +1,5 @@
 [programs.devnet]
-hydra_solana_anchor = "G17Xqi5vxArztd7w1ScgYF1YcYCqf5wcLFDRLd9hQ7Lh"
+hydra_coreless_banking = "2WGPmHfmXLfUjL1wEpmUGGHA8LRwbPbYEbMwmUQ6Z186"
 
 [registry]
 url = "https://anchor.projectserum.com"
