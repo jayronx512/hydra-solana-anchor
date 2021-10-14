@@ -17,6 +17,7 @@ import {
     Program, Provider, web3
   } from '@project-serum/anchor'
 import { Connection, PublicKey } from '@solana/web3.js';
+import axios from 'axios';
 import { formLabelClasses } from '@mui/material';
 const { SystemProgram, Keypair } = web3;
 
@@ -25,7 +26,10 @@ const opts = {
 }
 const programID = new PublicKey(idl.metadata.address);
 const network = "https://api.devnet.solana.com";
-
+const base64 = {
+    decode: s => Buffer.from(s, 'base64'),
+    encode: b => Buffer.from(b).toString('base64')
+  };
 const useStyles = makeStyles({
     root: {
         width: "100%",
@@ -65,14 +69,14 @@ const useStyles = makeStyles({
 const useStyles2 = makeStyles({
     root: {
         width: "100%",
-        zIndex: -1000,
+        zIndex: 1,
     }
 })
 
 const useStyles3 = makeStyles({
     root: {
         width: "100%",
-        zIndex: -1000,
+        zIndex: 1,
         marginTop: 20
     }
 })
@@ -91,6 +95,8 @@ export default function Transfer() {
     const[accountList, setAccountList] = useState([])
     const[solanaPublicKey, setSolanaPublicKey] = useState("")
     const[solanaSecretKey, setSolanaSecretKey] = useState("")
+    const[toCurrency, setToCurrency] = useState("")
+    const[fromCurrency, setFromCurrency] = useState("")
 
     useEffect(()=> {
         let account = JSON.parse(reactLocalStorage.get("account"))
@@ -124,7 +130,6 @@ export default function Transfer() {
                 value: ""
             })
         }
-        console.log(fromPublicKey)
     }
     const handleToPublicKeyChange = (e) => {
         if (e.target.value != "") {
@@ -192,7 +197,75 @@ export default function Transfer() {
        return result;
     }
 
-    async function transfer() {
+    function getCurrency(fromPublicKeyString, toPublicKeyString) {
+        let errorMessage = "";
+        if (fromPublicKey.value == "") {
+            errorMessage += "You must select an account to transfer from!\n"
+        }
+        if (toPublicKey.value == "") {
+            errorMessage += "You must key in the receipient's public key!\n"
+        }
+        if (solanaSecretKey == "" || solanaSecretKey == null) {
+            errorMessage += "No solana account found!\n"
+        }
+        if (errorMessage != "") {
+            alert(errorMessage)
+            return
+        }
+        setLoading(true)
+        let newAccount = []
+        let promises = []
+        promises.push(
+        axios.get(`/account/${fromPublicKeyString}`)
+            .then(response => {
+                newAccount.push(response)
+            })
+            .catch(error => {
+                console.log(error.message)
+            })
+        )
+        promises.push(
+        axios.get(`/account/${toPublicKeyString}`)
+            .then(response => {
+                newAccount.push(response)
+            })
+            .catch(error => {
+                console.log(error.message)
+            })
+        )
+
+        let temporaryFromCurrency = ""
+        let temporaryToCurrency = ""
+        console.log(promises)
+        Promise.all(promises)
+        .then(() => {
+            for(let i=0; i<newAccount.length; i++) {
+                let temporaryAccount = newAccount[i]
+                if (i == 0) {
+                    console.log("----Sender----")
+                    console.log(temporaryAccount.data.currency)
+                    setFromCurrency(temporaryAccount.data.currency)
+                    temporaryFromCurrency = temporaryAccount.data.currency
+                } else {
+                    console.log("----Receiver----")
+                    console.log(temporaryAccount.data.currency)
+                    setToCurrency(temporaryAccount.data.currency)
+                    temporaryToCurrency = temporaryAccount.data.currency
+                }
+            }
+        })
+        .catch(error => {
+            alert("Failed to retrieve account data: " + error)
+        })
+        if (temporaryFromCurrency != temporaryToCurrency) {
+            var confirm=window.confirm("Cross currency detected! " + temporaryFromCurrency + " -> " + temporaryToCurrency + "\nDaily fx rate will be applied if you wish to continue.")
+            if(!confirm){return}
+        }
+        setLoading(false)
+        transfer()
+    }
+
+    function transfer() {
         let errorMessage = "";
         if (fromPublicKey.value == "") {
             errorMessage += "You must select an account to transfer from!\n"
@@ -214,39 +287,87 @@ export default function Transfer() {
             alert(errorMessage)
             return
         }
+        console.log(toCurrency)
+        console.log(fromCurrency)
+        return
+        let secondErrorMessage = ""
         setLoading(true)
         const toAccount = new PublicKey(toPublicKey.value)
         let keys = fromPublicKey.value.split(" ")
         const fromAccount = new PublicKey(keys[0])
-        try {
-            const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)));
-            const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])));
-            const provider = await getProvider(solanaSecretKey);
-            const program = new Program(idl, programID, provider);
-            const transactionReferenceNumber = transactionReferenceGenerator();
+        const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)))
+        const senderAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])))
+        if (toCurrency == "" || fromCurrency == "") {
+            secondErrorMessage += "Failed to get account's currency!\n"
+        }
+
+        if (secondErrorMessage != "") {
+            alert(secondErrorMessage)
             setLoading(false)
-            await program.rpc.transfer(
-                new BN(amount.value),
-                remark.value,
-                referenceNumber.value, {
-                accounts: {
-                    fromAccount: fromAccount,
-                    authority: solAccount.publicKey,
-                    toAccount: toAccount
-                },
-                signers: [solAccount, payer]
-            })
+            return
+        }
+        const formData = {
+            amount: amount.value,
+            sender: base64.encode(senderAccount.secretKey),
+            sender_currency: fromCurrency,
+            receiver: toPublicKey.value,
+            receiver_currency: toCurrency,
+            remark: remark.value,
+            referrence_number: referenceNumber.value,
+            payer: base64.encode(solAccount.secretKey),
+
+        }
+        console.log(formData)
+        axios({
+            method: 'post',
+            url: '/transfer',
+            data: formData,
+            config: {headers: {'Content-Type': 'multipart/form-data' }}
+        })
+        .then((response) => {
+            setToCurrency("")
+            setFromCurrency("")
             setAmount({value: 0, error: true})
             setToPublicKey({value: "", error: true})
             setFromPublicKey({value: "", error: true})
-            setRemark({values: "", error: formLabelClasses})
+            setRemark({values: "", error: false})
             setReferenceNumber({value: "", error: true})
             alert("Successfully transfer!")
-        } catch(error) {
-            alert("Transfer fund error: " + error )
-        }
-
+        })
+        .catch((error) => {
+            alert("Failed to transfer fund: " + error.message)
+        })
         setLoading(false)
+        return
+        // try {
+        //     const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)));
+        //     const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])));
+        //     const provider = await getProvider(solanaSecretKey);
+        //     const program = new Program(idl, programID, provider);
+        //     const transactionReferenceNumber = transactionReferenceGenerator();
+        //     setLoading(false)
+        //     await program.rpc.transfer(
+        //         new BN(amount.value),
+        //         remark.value,
+        //         referenceNumber.value, {
+        //         accounts: {
+        //             fromAccount: fromAccount,
+        //             authority: solAccount.publicKey,
+        //             toAccount: toAccount
+        //         },
+        //         signers: [solAccount, payer]
+        //     })
+        //     setAmount({value: 0, error: true})
+        //     setToPublicKey({value: "", error: true})
+        //     setFromPublicKey({value: "", error: true})
+        //     setRemark({values: "", error: formLabelClasses})
+        //     setReferenceNumber({value: "", error: true})
+        //     alert("Successfully transfer!")
+        // } catch(error) {
+        //     alert("Transfer fund error: " + error )
+        // }
+
+        // setLoading(false)
     }
 
     return (
@@ -337,7 +458,7 @@ export default function Transfer() {
                     variant="outlined"
                     value={referenceNumber.value}
                     className={classes.root}
-                    onChange={handleRemarkChange}
+                    onChange={handleReferenceNumberChange}
                     error={referenceNumber.error}
                     style={referenceNumber.error ? {} : {marginBottom: 10}}
                     InputLabelProps={{

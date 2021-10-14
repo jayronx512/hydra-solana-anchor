@@ -61,20 +61,20 @@ export let accountData = [
             balance: 0
         },
         accountList: [
-            {
-                name: "Business USD Wallet",
-                currency: "USD",
-                publicKey: "66cxZVY2XGBvsHCQD3AcCrNsSA3r5dc7x36A1PYGvucy",
-                secretKey: "[56,36,9,186,109,78,70,163,183,70,18,107,72,91,137,5,86,235,245,25,122,44,205,127,143,21,114,98,167,4,37,40,75,186,255,22,234,56,232,11,221,217,104,247,224,154,148,174,73,79,95,236,249,68,34,204,12,176,123,233,123,135,148,142]",
-                solBalance: 0,
-                balance: 0,
-                transactionList: [
-                    {
-                        signature: "231hlsadjsaodjo1j3o2132o1",
-                        amount: -0.001
-                    }
-                ]
-            }
+            // {
+            //     name: "Business USD Wallet",
+            //     currency: "USD",
+            //     publicKey: "66cxZVY2XGBvsHCQD3AcCrNsSA3r5dc7x36A1PYGvucy",
+            //     secretKey: "[56,36,9,186,109,78,70,163,183,70,18,107,72,91,137,5,86,235,245,25,122,44,205,127,143,21,114,98,167,4,37,40,75,186,255,22,234,56,232,11,221,217,104,247,224,154,148,174,73,79,95,236,249,68,34,204,12,176,123,233,123,135,148,142]",
+            //     solBalance: 0,
+            //     balance: 0,
+            //     transactionList: [
+            //         {
+            //             signature: "231hlsadjsaodjo1j3o2132o1",
+            //             amount: -0.001
+            //         }
+            //     ]
+            // }
         ],
         payeeList: [
             {

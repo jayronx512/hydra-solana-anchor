@@ -22,7 +22,7 @@ function App() {
   
   const launchFunc = () => {
       axios.defaults.baseURL ="http://localhost:5000/"
-      axios.defaults.timeout = 10000;
+      axios.defaults.timeout = 30000;
   }
   return (
     <div>

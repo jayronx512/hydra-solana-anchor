@@ -18,6 +18,7 @@ import TextField from '@material-ui/core/TextField'
 import FormHelperText from '@material-ui/core/FormHelperText'
 import Select from '@material-ui/core/Select'
 import OutlinedInput from '@material-ui/core/OutlinedInput';
+import axios from 'axios';
 
 import { BN } from 'bn.js'
 import { NodeWallet } from '@project-serum/anchor/dist/cjs/provider';
@@ -34,6 +35,10 @@ const opts = {
 }
 const programID = new PublicKey(idl.metadata.address);
 const network = "https://api.devnet.solana.com";
+const base64 = {
+    decode: s => Buffer.from(s, 'base64'),
+    encode: b => Buffer.from(b).toString('base64')
+  };
 
 const useStyles = makeStyles({
     root: {
@@ -179,6 +184,8 @@ export default function Payee() {
     const[solanaPublicKey, setSolanaPublicKey] = useState("")
     const[solanaSecretKey, setSolanaSecretKey] = useState("")
     const[addPayeeOpen, setAddPayeeOpen] = useState(false)
+    const[toCurrency, setToCurrency] = useState("")
+    const[fromCurrency, setFromCurrency] = useState("")
 
     //add payee
     const[payeeName, setPayeeName] = useState({value: "", error: true})
@@ -360,6 +367,64 @@ export default function Payee() {
        return result;
     }
 
+    function getCurrency(publicKeyString, sender) {
+        setLoading(true)
+        let newAccount = []
+        let promises = []
+        promises.push(
+        axios.get(`/account/${publicKeyString}`)
+            .then(response => {
+                newAccount.push(response)
+            })
+            .catch(error => {
+                console.log(error.message)
+            })
+        )
+        Promise.all(promises)
+        .then(() => {
+            for(let i=0; i<newAccount.length; i++) {
+                let temporaryAccount = newAccount[i]
+                if (sender) {
+                    console.log("----Sender----")
+                    console.log(temporaryAccount.data.currency)
+                    setFromCurrency(temporaryAccount.data.currency)
+                    return temporaryAccount.data.currency
+                } else {
+                    console.log("----Receiver----")
+                    console.log(temporaryAccount.data.currency)
+                    setToCurrency(temporaryAccount.data.currency)
+                    return temporaryAccount.data.currency
+                }
+            }
+        })
+        .catch(error => {
+            alert("Failed to retrieve account data: " + error)
+        })
+        setLoading(false)
+    }
+
+    function getCurrencyForTransfer() {
+        let errorMessage = "";
+        if (fromPublicKey.value == "") {
+            errorMessage += "You must select an account to transfer from!\n"
+        }
+        if (toPublicKey.value == "") {
+            errorMessage += "You must key in the receipient's public key!\n"
+        }
+        if (solanaSecretKey == "" || solanaSecretKey == null) {
+            errorMessage += "No solana account found!\n"
+        }
+        if (errorMessage != "") {
+            alert(errorMessage)
+            return
+        }
+        let keys = fromPublicKey.value.split(" ")
+        getCurrency(toPublicKey.value, false)
+        getCurrency(keys[0], true)
+        
+        return
+    }
+
     async function transfer() {
         let errorMessage = "";
         if (fromPublicKey.value == "") {
@@ -379,39 +444,93 @@ export default function Payee() {
             alert(errorMessage)
             return
         }
+
+        let secondErrorMessage = ""
         setLoading(true)
-        const toAccount = new PublicKey(toPublicKey)
+        const toAccount = new PublicKey(toPublicKey.value)
         let keys = fromPublicKey.value.split(" ")
         const fromAccount = new PublicKey(keys[0])
-        try {
-            const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)));
-            const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])));
-            const provider = await getProvider(solanaSecretKey);
-            const program = new Program(idl, programID, provider);
+        const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)))
+        const senderAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])))
+        
+        if (toCurrency == "" || fromCurrency == "") {
+            secondErrorMessage += "Failed to get account's currency!\n"
+        }
+
+        if (secondErrorMessage != "") {
+            alert(secondErrorMessage)
             setLoading(false)
-            await program.rpc.transfer(
-                new BN(amount.value),
-                remark.value,
-                referenceNumber.value, {
-                accounts: {
-                    fromAccount: fromAccount,
-                    authority: solAccount.publicKey,
-                    toAccount: toAccount
-                },
-                signers: [solAccount, payer]
-            })
-            setRemark({value: "", error: false})
+            return
+        }
+
+        if (toCurrency != fromCurrency) {
+            var confirm=window.confirm("Cross currency detected! " + fromCurrency + " -> " + toCurrency + "\nDaily fx rate will be applied if you wish to continue.")
+            if(!confirm){return}
+        }
+        
+        const formData = {
+            amount: amount.value,
+            sender: base64.encode(senderAccount.secretKey),
+            sender_currency: fromCurrency,
+            receiver: toPublicKey.value,
+            receiver_currency: toCurrency,
+            remark: remark.value,
+            referrence_number: referenceNumber.value,
+            payer: base64.encode(solAccount.secretKey),
+        }
+        console.log(formData)
+        axios({
+            method: 'post',
+            url: '/transfer',
+            data: formData,
+            config: {headers: {'Content-Type': 'multipart/form-data' }}
+        })
+        .then((response) => {
             setAmount({value: 0, error: true})
             setToPublicKey({value: "", error: true})
             setFromPublicKey({value: "", error: true})
+            setRemark({values: "", error: false})
             setReferenceNumber({value: "", error: true})
             alert("Successfully transfer!")
-        } catch(error) {
-            alert("Failed to transfer fund to payee: " + error)
-        }
-        
-        handleClose()
+        })
+        .catch((error) => {
+            alert("Failed to transfer fund: " + error.message)
+        })
         setLoading(false)
+        return
+        // setLoading(true)
+        // const toAccount = new PublicKey(toPublicKey)
+        // let keys = fromPublicKey.value.split(" ")
+        // const fromAccount = new PublicKey(keys[0])
+        // try {
+        //     const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)));
+        //     const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])));
+        //     const provider = await getProvider(solanaSecretKey);
+        //     const program = new Program(idl, programID, provider);
+        //     setLoading(false)
+        //     await program.rpc.transfer(
+        //         new BN(amount.value),
+        //         remark.value,
+        //         referenceNumber.value, {
+        //         accounts: {
+        //             fromAccount: fromAccount,
+        //             authority: solAccount.publicKey,
+        //             toAccount: toAccount
+        //         },
+        //         signers: [solAccount, payer]
+        //     })
+        //     setRemark({value: "", error: false})
+        //     setAmount({value: 0, error: true})
+        //     setToPublicKey({value: "", error: true})
+        //     setFromPublicKey({value: "", error: true})
+        //     setReferenceNumber({value: "", error: true})
+        //     alert("Successfully transfer!")
+        // } catch(error) {
+        //     alert("Failed to transfer fund to payee: " + error)
+        // }
+        
+        // handleClose()
+        // setLoading(false)
     }
 
     const addPayee = () => {
@@ -709,7 +828,7 @@ export default function Payee() {
                             } 
                             >
                                 <option aria-label="None" value=""/>
-                                <option value="USD">USD</option>
+                                <option value="MYR">MYR</option>
                                 <option value="SGD">SGD</option>
                         </Select>
                         {payeeCurrency.error ? <FormHelperText style={{color: "red", marginBottom:10}}>Required</FormHelperText> : null}

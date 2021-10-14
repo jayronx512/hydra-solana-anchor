@@ -72,7 +72,8 @@ export default function CustomTopNavigation(initState) {
                     backgroundColor: "#3699FF",
                     height: "60px",
                     display: "flex",
-                    justifyContent: initState.loginPage ? "center" : "space-between"
+                    justifyContent: initState.loginPage ? "center" : "space-between",
+                    zIndex: 1000
                 }}>
                 {initState.loginPage ? null :
                     <div style={{zIndex: 1000, width: "30%"}}>
