@@ -2,7 +2,6 @@ use account::*;
 use anchor_lang::prelude::*;
 use context::*;
 use error::*;
-use rust_decimal::prelude::*;
 
 mod account;
 mod context;
@@ -25,7 +24,7 @@ mod hydra_coreless_banking {
         referrence_number: String,
     ) -> ProgramResult {
         let journal = HydraJournal {
-            amount: String::from("0"),
+            amount: format!("{:.4}", 0),
             currency: currency.clone(),
             journal_type: String::from("Create Account"),
             referrence_number: referrence_number,
@@ -35,7 +34,7 @@ mod hydra_coreless_banking {
         let hydra_account = &mut ctx.accounts.hydra_account;
         hydra_account.pubkey = hydra_account.key();
         hydra_account.authority = authority.key();
-        hydra_account.balance = String::from("0");
+        hydra_account.balance = format!("{:.4}", 0);
         hydra_account.currency = currency;
         hydra_account.client_name = name;
         hydra_account.client_identification_number = id_number;
@@ -106,35 +105,28 @@ mod hydra_coreless_banking {
 
         let sender_journal_amount = -amount_value;
         let sender_journal = HydraJournal {
-            amount: sender_journal_amount.to_string(),
+            amount: format!("{:.4}", sender_journal_amount),
             currency: sender.currency.clone(),
             journal_type: String::from("Transfer"),
             referrence_number: referrence_number.clone(),
             remark: remark.clone(),
         };
         let new_sender_balance = sender_value - amount_value;
-        sender.balance = new_sender_balance.to_string();
+        sender.balance = format!("{:.4}", new_sender_balance);
         sender.transactions.push(sender_journal);
 
-        //let amount_decimal = Decimal::from_u64(amount).unwrap();
-        //let fxrate_decimal = Decimal::from_u64(fxrate).unwrap();
-        //let receiver_amount = (amount_decimal * fxrate_decimal)
-        //.round_dp(4)
-        //.to_u64()
-        //.unwrap();
-        let receiver_amount = amount_value * fxrate_value;
+        let receive_amount = amount_value * fxrate_value;
         let receiver = &mut ctx.accounts.to_account;
         let receiver_balance = receiver.balance.parse::<f64>().unwrap();
+        let new_receiver_balance = receiver_balance + receive_amount;
+        receiver.balance = format!("{:.4}", new_receiver_balance);
         let receiver_journal = HydraJournal {
-            amount: receiver_amount.to_string(),
+            amount: format!("{:.4}", receive_amount),
             currency: receiver.currency.clone(),
             journal_type: String::from("Transfer"),
             referrence_number: referrence_number.clone(),
             remark: remark.clone(),
         };
-
-        let new_receiver_balance = receiver_balance + receiver_amount;
-        receiver.balance = new_receiver_balance.to_string();
         receiver.transactions.push(receiver_journal);
 
         Ok(())
@@ -149,10 +141,10 @@ mod hydra_coreless_banking {
         let amount_value = amount.parse::<f64>().unwrap();
         let new_balance = hydra_account.balance.parse::<f64>().unwrap() + amount_value;
 
-        hydra_account.balance = new_balance.to_string();
+        hydra_account.balance = format!("{:.4}", new_balance);
 
         let journal = HydraJournal {
-            amount: amount_value.to_string(),
+            amount: format!("{:.4}", amount_value),
             currency: hydra_account.currency.clone(),
             journal_type: String::from("Account Top Up"),
             referrence_number: referrence_number.clone(),

@@ -6,10 +6,11 @@ import express from 'express';
 import idl from './idl.json';
 import appconfig from "./appconfig.json";
 import fxrates from "./fxrate.json";
+import { DbConnection } from './db';
 
 const app = express();
 const opts = {
-  preflightCommitment: "processed"
+  preflightCommitment: 'processed'
 }
 
 const base64 = {
@@ -22,8 +23,8 @@ const superAccount = Keypair.fromSecretKey(new Uint8Array([202, 160, 29, 252, 17
 
 app.use(express.json())
 app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   next();
 });
 
@@ -47,8 +48,6 @@ app.post('/account', async (req, res) => {
 
   try {
     const customerAccount = Keypair.generate();
-    console.log("Create account for pubkey string: ", customerAccount.publicKey.toString());
-    console.log("Create account for pubkey string: ", customerAccount.secretKey);
     await createAccount(customerAccount, req.body);
     res.send(base64.encode(customerAccount.secretKey));
   } catch (error) {
@@ -91,7 +90,12 @@ app.post('/transfer', async (req, res) => {
   }
 })
 
-onProgramAccountChange();
+try {
+  onProgramAccountChange();
+} catch (error) {
+  console.log(error);
+}
+
 
 async function getProvider(solAccount) {
   const network = "https://api.devnet.solana.com";
@@ -155,8 +159,8 @@ async function transfer(param) {
   let fxrate = 1;
   if (param.sender_currency != param.receiver_currency) {
     let fxrate_info = fxrates
-      .find(fxrate => fxrate.base == param.sender_currency && fxrate.rates[param.receiver_currency]);
-    fxrate = fxrate_info == null ? 1 : fxrate_info.rates[param.receiver_currency];
+      .find(fxrate => fxrate.base == param.receiver_currency && fxrate.rates[param.sender_currency]);
+    fxrate = fxrate_info == null ? 1 : fxrate_info.rates[param.sender_currency];
   }
 
   const payer = getPayer(param.payer);
@@ -179,9 +183,9 @@ async function onProgramAccountChange() {
   var program = new Program(idl, programID, provider);
 
   provider.connection.onProgramAccountChange(programID, async account => {
-    console.log("Handle on change event for account", account.accountId.toString());
+    console.log('Handle on change event for account', account.accountId.toString());
     let data = program.coder.accounts.decode(program.account.hydraAccount._idlAccount.name, account.accountInfo.data);
-    //console.log(data);
+    (await DbConnection.getDb()).collection('account_change_event').insertOne(data);
   });
 }
 
