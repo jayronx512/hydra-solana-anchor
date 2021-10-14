@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Router, Switch, Route } from 'react-router-dom';
 import history from './history';
 import logo from './logo.svg';
@@ -12,7 +12,18 @@ import Transfer from './pages/transfer';
 import Admin from './pages/admin';
 import Home from './pages/home'
 
+
+import axios from 'axios';
+
 function App() {
+  useEffect(()=>{
+    launchFunc()
+  }, [])
+  
+  const launchFunc = () => {
+      axios.defaults.baseURL ="http://localhost:5000/"
+      axios.defaults.timeout = 10000;
+  }
   return (
     <div>
       <Router history={history}>
