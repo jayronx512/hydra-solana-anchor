@@ -156,17 +156,25 @@ async function topupAccount(param) {
 }
 
 async function transfer(param) {
-  let fxrate = 1;
-  if (param.sender_currency != param.receiver_currency) {
-    let fxrate_info = fxrates
-      .find(fxrate => fxrate.base == param.receiver_currency && fxrate.rates[param.sender_currency]);
-    fxrate = fxrate_info == null ? 1 : fxrate_info.rates[param.sender_currency];
-  }
-
   const payer = getPayer(param.payer);
   const sender = getPayer(param.sender);
   const provider = await getProvider(payer);
   const program = new Program(idl, programID, provider);
+
+  let accounts = await program.account.hydraAccount.fetchMultiple([sender.publicKey, new PublicKey(param.receiver)]);
+
+  let senderAccount = accounts[0];
+  let senderCurrency = senderAccount.currency;
+
+  let receiverAccount = accounts[1];
+  let receiverCurrency = receiverAccount.currency;
+
+  let fxrate = 1;
+  if (senderCurrency != receiverCurrency) {
+    let fxrate_info = fxrates
+      .find(fxrate => fxrate.base == receiverCurrency && fxrate.rates[senderCurrency]);
+    fxrate = fxrate_info == null ? 1 : fxrate_info.rates[senderCurrency];
+  }
 
   return program.rpc.crossCurrencyTransfer(param.amount, fxrate.toString(), param.remark, param.referrence_number, {
     accounts: {
