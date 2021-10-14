@@ -35,7 +35,7 @@ describe("hydra_coreless_banking", () => {
   //it("Fund transfer", async () => testTransfer());
   //it("Fund transfer", async () => testTransfer());
 
-  it("Cross Currency Transfer", async () => testCrossCurrencyTransfer());
+  //it("Cross Currency Transfer", async () => testCrossCurrencyTransfer());
 
   it("Retrieve", async () => getAccountInfo("BzfmrHFyhpp8P26kwbwZ5vFZHMRhzDGPrnaXB9smNNnZ"));
   it("Retrieve", async () => getAccountInfo("FDB1hbtgEQ8tFHHkpyCaV2oVoeXGorXqUrbgyTJYTWJS"));
