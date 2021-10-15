@@ -1,4 +1,4 @@
-Infinitude - It's Coreless
+Infinitude - Coreless solution
 ===
 
 Coreless solution to improve efficiencies at lesser cost with DLT as primary ledger.
