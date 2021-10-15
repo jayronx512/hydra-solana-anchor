@@ -15,6 +15,8 @@ import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
 import Button from '@material-ui/core/Button'
+import axios from 'axios';
+import { colorList } from '../data.js'
 
 
 const { SystemProgram, Keypair } = web3;
@@ -66,45 +68,27 @@ export default function Admin() {
 
     useEffect(async () => {
         setLoading(true)
-        let account = JSON.parse(reactLocalStorage.get("account"))
-        setSolanaPublicKey(account.solanaAccount.publicKey)
-        setSolanaSecretKey(account.solanaAccount.secretKey)
-        setAccount(account)
-        const connection = new Connection(network, opts.preflightCommitment);
-        let temporaryAllAccountList = []
-        try {
-            const provider = await getProvider(account.solanaAccount.secretKey);
-            const program = new Program(idl, programID, provider);
-            let allAccountList = await connection.getProgramAccounts(programID);
-            for (let getAccount of allAccountList) {
-                try {
-                let temporaryAccount = await program.coder.accounts.decode(program.account.hydraAccount._idlAccount.name, getAccount.account.data)
-                temporaryAllAccountList.push(temporaryAccount)
-                } catch(error) {
-                    //do nothing, ignore all data
-                }
-            }
-            setAllAccountList(temporaryAllAccountList)
-            // setAllAccountList(temporaryAllAccountList)
-            
-        } catch(error) {
-            alert("Failed to retrieve all accounts: " + error)
-        }
-        
-        // if (account.solanaAccount.secretKey != "") {
-        //     try {
-        //         const provider = await getProvider(account.solanaAccount.secretKey);
-        //         const program = new Program(idl, programID, provider);
-        //         let allAccountList = await program.account.hydraAccount.all();
-        //         setAllAccountList(allAccountList)
-        //         console.log(allAccountList)
-        //     } catch(error) {
-        //         alert("Failed to get all accounts: " + error)
-        //     }
-        // }
+        let accountStorage = JSON.parse(reactLocalStorage.get("account"))
+        setSolanaPublicKey(accountStorage.solanaAccount.publicKey)
+        setSolanaSecretKey(accountStorage.solanaAccount.secretKey)
+        setAccount(accountStorage)
+        getAllAccounts()
        setLoading(false)
     }, [])
 
+    function getAllAccounts() {
+        setLoading(true)
+        axios.get(`/accounts`)
+            .then(response => {
+                console.log(response)
+                console.log(response.data)
+                setAllAccountList(response.data)
+                
+            })
+            .catch(error => {
+                console.log(error.message)
+            })
+    }
     async function getProvider(secretKey) {
         const clientAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(secretKey)));
         const wallet = new NodeWallet(clientAccount);
@@ -139,7 +123,7 @@ export default function Admin() {
                                         </tr>
                                         <tr>
                                             <td>Amount</td>
-                                            <td>: {item.amount.words[0]} {item.currency}</td>
+                                            <td>: {item.amount} {item.currency}</td>
                                         </tr>
                                         <tr>
                                             <td>Reference Number</td>
@@ -173,10 +157,10 @@ export default function Admin() {
                                 },
                             }}
                             >
-                            <Paper elevation={3} style={index % 2 == 0 ? {fontFamily: "Open-Sans", padding: 20} : {fontFamily: "Open-Sans", padding: 20, backgroundColor: "#ffcdd2"}} onClick={()=>{setTransactionList(item.transactions); handleOpen()}}>
+                            <Paper elevation={3} style={{fontFamily: "Open-Sans", padding: 20, backgroundColor: colorList[Math.floor(Math.random() * colorList.length)]}} onClick={()=>{setTransactionList(item.data.transactions); handleOpen()}}>
                                 <div style={{display: "flex", justifyContent: "space-around", alignItems: "center"}}>
-                                    <div style={{fontSize: "1rem"}}><strong>{item.clientName}</strong></div>
-                                    <div style={{fontSize: "2rem"}}>{item.balance.words[0]} {item.currency}</div>
+                                    <div style={{fontSize: "1rem"}}><strong>{item.data.clientName}</strong></div>
+                                    <div style={{fontSize: "2rem"}}>{item.data.balance} {item.currency}</div>
                                 </div>
                                 <hr/>
                                 <br/>
@@ -184,15 +168,15 @@ export default function Admin() {
                                     <table>
                                         <tr>
                                             <td>Email</td>
-                                            <td>: {item.clientEmail}</td>
+                                            <td>: {item.data.clientEmail}</td>
                                         </tr>
                                         <tr>
                                             <td>ID Type</td>
-                                            <td>: {item.clientIdentificationType}</td>
+                                            <td>: {item.data.clientIdentificationType}</td>
                                         </tr>
                                         <tr>
                                             <td>ID No</td>
-                                            <td>: {item.clientIdentificationNumber}</td>
+                                            <td>: {item.data.clientIdentificationNumber}</td>
                                         </tr>
                                     </table>
                                 </div>

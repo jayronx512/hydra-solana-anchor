@@ -7,23 +7,7 @@ import CustomTopNavigation from '../components/topnavigation';
 import { accountData } from '../data.js'
 import TextField from '@material-ui/core/TextField'
 import Button from '@material-ui/core/Button'
-import Hydra from '../asset/hydra.png'
 import Infinity from '../asset/infinity2.png'
-
-// import {
-//     Program, Provider, web3
-//   } from '@project-serum/anchor';
-
-
-// import { Connection, PublicKey } from '@solana/web3.js';
-// const { SystemProgram, Keypair } = web3;
-// if (reactLocalStorage.get("publicKey") == null || reactLocalStorage.get("publicKey") == "") {
-//     const baseAccount = Keypair.generate();
-//     reactLocalStorage.set("publicKey", baseAccount.publicKey);
-//     reactLocalStorage.set("secretKey", JSON.stringify(Array.from(baseAccount.secretKey)))
-// } else {
-//     history.push('/dashboard');
-// }
 
 const useStyles = makeStyles({
     root: {

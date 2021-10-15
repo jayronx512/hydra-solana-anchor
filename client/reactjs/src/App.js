@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
 import { Router, Switch, Route } from 'react-router-dom';
 import history from './history';
-import logo from './logo.svg';
 import './App.css';
 
-import Landing from './pages/landing'
+import Landing from './pages/landing';
 import Account from './pages/account';
 import SignUp from './pages/signup';
 import Payee from './pages/payee';
 import Transfer from './pages/transfer';
 import Admin from './pages/admin';
-import Home from './pages/home'
+import Home from './pages/home';
+import Reward from './pages/reward';
 
 
 import axios from 'axios';
@@ -22,7 +22,7 @@ function App() {
   
   const launchFunc = () => {
       axios.defaults.baseURL ="http://localhost:5000/"
-      axios.defaults.timeout = 10000;
+      axios.defaults.timeout = 30000;
   }
   return (
     <div>
@@ -35,6 +35,7 @@ function App() {
           <Route exact path="/payee" render={props => (<Payee {...props} />)}/>
           <Route exact path="/transfer" render={props => (<Transfer {...props} />)}/>
           <Route exact path="/admin" render={props => (<Admin {...props} />)}/>
+          <Route exact path="/reward" render={props => (<Reward {...props} />)}/>
         </Switch>
       </Router>
     </div>

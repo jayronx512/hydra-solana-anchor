@@ -14,18 +14,21 @@ import { BN } from 'bn.js'
 import { NodeWallet } from '@project-serum/anchor/dist/cjs/provider';
 import idl from '../idl.json';
 import {
-    Program, Provider, web3
+    Provider, web3
   } from '@project-serum/anchor'
 import { Connection, PublicKey } from '@solana/web3.js';
-import { formLabelClasses } from '@mui/material';
-const { SystemProgram, Keypair } = web3;
+import axios from 'axios';
+const {Keypair } = web3;
 
 const opts = {
     preflightCommitment: "processed"
 }
 const programID = new PublicKey(idl.metadata.address);
 const network = "https://api.devnet.solana.com";
-
+const base64 = {
+    decode: s => Buffer.from(s, 'base64'),
+    encode: b => Buffer.from(b).toString('base64')
+  };
 const useStyles = makeStyles({
     root: {
         width: "100%",
@@ -65,14 +68,14 @@ const useStyles = makeStyles({
 const useStyles2 = makeStyles({
     root: {
         width: "100%",
-        zIndex: -1000,
+        zIndex: 1,
     }
 })
 
 const useStyles3 = makeStyles({
     root: {
         width: "100%",
-        zIndex: -1000,
+        zIndex: 1,
         marginTop: 20
     }
 })
@@ -124,7 +127,6 @@ export default function Transfer() {
                 value: ""
             })
         }
-        console.log(fromPublicKey)
     }
     const handleToPublicKeyChange = (e) => {
         if (e.target.value != "") {
@@ -192,7 +194,7 @@ export default function Transfer() {
        return result;
     }
 
-    async function transfer() {
+    function transfer() {
         let errorMessage = "";
         if (fromPublicKey.value == "") {
             errorMessage += "You must select an account to transfer from!\n"
@@ -214,39 +216,42 @@ export default function Transfer() {
             alert(errorMessage)
             return
         }
+
         setLoading(true)
-        const toAccount = new PublicKey(toPublicKey.value)
+    
         let keys = fromPublicKey.value.split(" ")
-        const fromAccount = new PublicKey(keys[0])
-        try {
-            const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)));
-            const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])));
-            const provider = await getProvider(solanaSecretKey);
-            const program = new Program(idl, programID, provider);
-            const transactionReferenceNumber = transactionReferenceGenerator();
-            setLoading(false)
-            await program.rpc.transfer(
-                new BN(amount.value),
-                remark.value,
-                referenceNumber.value, {
-                accounts: {
-                    fromAccount: fromAccount,
-                    authority: solAccount.publicKey,
-                    toAccount: toAccount
-                },
-                signers: [solAccount, payer]
-            })
+        const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)))
+        const senderAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])))
+
+        const formData = {
+            amount: amount.value,
+            sender: base64.encode(senderAccount.secretKey),
+            receiver: toPublicKey.value,
+            remark: remark.value,
+            referrence_number: referenceNumber.value,
+            payer: base64.encode(solAccount.secretKey),
+
+        }
+        console.log(formData)
+        axios({
+            method: 'post',
+            url: '/transfer',
+            data: formData,
+            config: {headers: {'Content-Type': 'multipart/form-data' }}
+        })
+        .then((response) => {
             setAmount({value: 0, error: true})
             setToPublicKey({value: "", error: true})
             setFromPublicKey({value: "", error: true})
-            setRemark({values: "", error: formLabelClasses})
+            setRemark({values: "", error: false})
             setReferenceNumber({value: "", error: true})
             alert("Successfully transfer!")
-        } catch(error) {
-            alert("Transfer fund error: " + error )
-        }
-
+        })
+        .catch((error) => {
+            alert("Failed to transfer fund: " + error.message)
+        })
         setLoading(false)
+        return
     }
 
     return (
@@ -337,7 +342,7 @@ export default function Transfer() {
                     variant="outlined"
                     value={referenceNumber.value}
                     className={classes.root}
-                    onChange={handleRemarkChange}
+                    onChange={handleReferenceNumberChange}
                     error={referenceNumber.error}
                     style={referenceNumber.error ? {} : {marginBottom: 10}}
                     InputLabelProps={{
