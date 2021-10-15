@@ -19,30 +19,13 @@ const solAccount = Keypair.fromSecretKey(new Uint8Array([
 
 describe("hydra_coreless_banking", () => {
   //it("Create solana account and airdrop", async () => testInitAccount());
-
   //it("Create customer account", async () => testCreateAccount());
-
-  //it("Update client name", async () => updateClientName("Fesw6UDS8ybLbsCSNiZhDyCfS3wi5RjYjPT324KzSY8n"));
-
   //it("Topup to account", async () => testTopUpAccount("BzfmrHFyhpp8P26kwbwZ5vFZHMRhzDGPrnaXB9smNNnZ"));
   //it("Withdraw from account", async () => testWithdrawFromAccount());
-
-  //it("Retrieve", async () => getAccountInfo());
-
   //it("Fund transfer", async () => testTransfer());
-  //it("Fund transfer", async () => testTransfer());
-  //it("Fund transfer", async () => testTransfer());
-  //it("Fund transfer", async () => testTransfer());
-  //it("Fund transfer", async () => testTransfer());
-
   //it("Cross Currency Transfer", async () => testCrossCurrencyTransfer());
-
-  it("Retrieve", async () => getAccountInfo("BzfmrHFyhpp8P26kwbwZ5vFZHMRhzDGPrnaXB9smNNnZ"));
-  it("Retrieve", async () => getAccountInfo("FDB1hbtgEQ8tFHHkpyCaV2oVoeXGorXqUrbgyTJYTWJS"));
-
+  //it("Retrieve", async () => getAccountInfo("BzfmrHFyhpp8P26kwbwZ5vFZHMRhzDGPrnaXB9smNNnZ"));
   //it("Retrieve All", async () => getProgramAccounts());
-
-  //it("Init", async () => init());
 });
 
 async function testInitAccount() {
