@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { makeStyles, withStyles } from '@material-ui/core/styles';
 import {reactLocalStorage} from 'reactjs-localstorage';
-import history from '../history';
 import { colorList } from '../data.js'
 import CustomTopNavigation from '../components/topnavigation';
 import CustomBottomNavigation from '../components/bottomnavigation';
@@ -21,14 +20,12 @@ import OutlinedInput from '@material-ui/core/OutlinedInput';
 import PropTypes from 'prop-types';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import { BN } from 'bn.js';
 import PullToRefresh from 'react-simple-pull-to-refresh';
 
 
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 import axios from 'axios';
-import qs from 'qs';
 
 import { NodeWallet } from '@project-serum/anchor/dist/cjs/provider';
 import idl from '../idl.json';
@@ -38,9 +35,8 @@ import {
 
   
 import { Connection, PublicKey } from '@solana/web3.js';
-import { LocalConvenienceStoreOutlined } from '@material-ui/icons';
 
-const { SystemProgram, Keypair } = web3;
+const { Keypair } = web3;
 const opts = {
     preflightCommitment: "processed"
 }
@@ -154,11 +150,9 @@ const Accordion = withStyles({
 
 const AccordionSummary = withStyles({
     root: {
-        // backgroundColor: 'black',
         color: "black",
         fontFamily: "Open-Sans",
         borderRadius: "10px",
-        // borderBottom: '1px solid rgba(0, 0, 0, .125)',
         marginBottom: -1,
         minHeight: 56,
         '&$expanded': {
@@ -262,8 +256,6 @@ function Dashboard() {
     }
 
     async function requestAirDrop(publicKey, secretKey) {
-        // const provider = await getProvider()
-        // const program = new Program(idl, programID, provider)
         setLoading(true)
         try {
             const provider = await getProvider(secretKey);
@@ -299,29 +291,6 @@ function Dashboard() {
             return balance / web3.LAMPORTS_PER_SOL;
         } catch(error) {
             alert("Failed to get balance: " + error)
-        }
-    }
-
-    async function resetBalance() {
-        try {
-            const provider = await getProvider(solanaSecretKey);
-            const program = new Program(idl, programID, provider);
-            let temporaryAccount = account
-            let newAccount = []
-            for (let i=0; i<temporaryAccount.accountList.length; i++) {
-                let individualAccount = temporaryAccount.accountList[i]
-                individualAccount.solBalance = await getBalance(individualAccount.publicKey, individualAccount.secretKey)
-                let publicKey = new PublicKey(individualAccount.publicKey)
-                let receiverAccount = await program.account.hydraAccount.fetch(publicKey);
-                console.log(receiverAccount)
-                console.log(receiverAccount.balance.words[0])
-                // individualAccount.balance = receiverAccount.balance.words[0]
-                newAccount.push(individualAccount)
-            }
-            temporaryAccount.accountList = newAccount
-            setAccount(temporaryAccount)
-        } catch(error) {
-            alert("Failed to reset balance: " + error)
         }
     }
 
@@ -424,84 +393,6 @@ function Dashboard() {
         setLoading(false)
     }
 
-    // async function createAccount() {
-    //     if (account.solanaAccount.publicKey == "") {
-    //         alert("Please create a solana account first!")
-    //         return
-    //     }
-    //     let errorMessage = ""
-    //     if (currency.value == "") {
-    //         errorMessage += "You must select a currency!"
-    //     }
-    //     if (name.value == "") {
-    //         errorMessage += "Name cannot be empty!"
-    //     }
-    //     if (referenceNumber.value == "") {
-    //         errorMessage += "Reference Number cannot be empty!"
-    //     }
-
-    //     if (errorMessage != "") {
-    //         alert(errorMessage)
-    //         return
-    //     }
-    //     setLoading(true)
-    //     handleClose()
-    //     try {
-    //         //get sol account
-    //         const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)))
-    //         //create hydra account
-    //         const hydraAccount = Keypair.generate()
-    //         const provider = await getProvider(solanaSecretKey)
-    //         const program = new Program(idl, programID, provider);
-    //         await program.rpc.createAccount(
-    //             currency.value,
-    //             name.value,
-    //             account.idNumber,
-    //             account.idType,
-    //             account.email,
-    //             "Account Creation",
-    //             referenceNumber.value, {
-    //             accounts: {
-    //                 hydraAccount: hydraAccount.publicKey,
-    //                 authority: solAccount.publicKey,
-    //                 systemProgram: SystemProgram.programId,
-    //                 },
-    //                 signers: [hydraAccount, solAccount],
-    //             });
-    //         const newAccount = await program.account.hydraAccount.fetch(hydraAccount.publicKey);
-    //         let temporaryAccount = account
-    //         let temporaryAccountList = account.accountList
-    //         let newObject = {
-    //             name: newAccount.clientName,
-    //             currency: newAccount.currency,
-    //             publicKey: hydraAccount.publicKey.toString(),
-    //             secretKey: JSON.stringify(Array.from(hydraAccount.secretKey)),
-    //             balance: 0,
-    //             transactionList: []
-    //         }
-    //         temporaryAccountList.push(newObject)
-    //         temporaryAccount.accountList = temporaryAccountList
-    //         setAccount(temporaryAccount)
-    //         setNewPublicKey(hydraAccount.publicKey.toString())
-    //         let half = Math.ceil(hydraAccount.publicKey.toString().length / 2)
-    //         let publicKeyString = hydraAccount.publicKey.toString()
-    //         setShortenedPublicKey(publicKeyString.substr(0, half) + "...")
-    //         reactLocalStorage.set("account", JSON.stringify(temporaryAccount))
-    //         resetBalance()
-    //         setCurrency({value: "", error: true})
-    //         setName({value: "", error: true})
-    //         setSuccessOpen(true)
-
-    //         //reset 
-    //         setCurrency({value: 0, error: true})
-    //         setName({value: "", error: true})
-    //         setReferenceNumber({value: "", error: true})
-    //     } catch (error) {
-    //         alert("Failed to create hydra account: " + error)
-    //     }
-    //     setLoading(false)
-    //     return
-    // }
     function createAccount() {
         if (account.solanaAccount.publicKey == "") {
             alert("Please create a solana account first!")
@@ -553,59 +444,6 @@ function Dashboard() {
         .catch((error) => {
             console.log(error.message)
         })
-        // try {
-        //     //get sol account
-        //     const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)))
-        //     //create hydra account
-        //     const hydraAccount = Keypair.generate()
-        //     const provider = await getProvider(solanaSecretKey)
-        //     const program = new Program(idl, programID, provider);
-        //     await program.rpc.createAccount(
-        //         currency.value,
-        //         name.value,
-        //         account.idNumber,
-        //         account.idType,
-        //         account.email,
-        //         "Account Creation",
-        //         referenceNumber.value, {
-        //         accounts: {
-        //             hydraAccount: hydraAccount.publicKey,
-        //             authority: solAccount.publicKey,
-        //             systemProgram: SystemProgram.programId,
-        //             },
-        //             signers: [hydraAccount, solAccount],
-        //         });
-        //     const newAccount = await program.account.hydraAccount.fetch(hydraAccount.publicKey);
-        //     let temporaryAccount = account
-        //     let temporaryAccountList = account.accountList
-        //     let newObject = {
-        //         name: newAccount.clientName,
-        //         currency: newAccount.currency,
-        //         publicKey: hydraAccount.publicKey.toString(),
-        //         secretKey: JSON.stringify(Array.from(hydraAccount.secretKey)),
-        //         balance: 0,
-        //         transactionList: []
-        //     }
-        //     temporaryAccountList.push(newObject)
-        //     temporaryAccount.accountList = temporaryAccountList
-        //     setAccount(temporaryAccount)
-        //     setNewPublicKey(hydraAccount.publicKey.toString())
-        //     let half = Math.ceil(hydraAccount.publicKey.toString().length / 2)
-        //     let publicKeyString = hydraAccount.publicKey.toString()
-        //     setShortenedPublicKey(publicKeyString.substr(0, half) + "...")
-        //     reactLocalStorage.set("account", JSON.stringify(temporaryAccount))
-        //     resetBalance()
-        //     setCurrency({value: "", error: true})
-        //     setName({value: "", error: true})
-        //     setSuccessOpen(true)
-
-        //     //reset 
-        //     setCurrency({value: 0, error: true})
-        //     setName({value: "", error: true})
-        //     setReferenceNumber({value: "", error: true})
-        // } catch (error) {
-        //     alert("Failed to create hydra account: " + error)
-        // }
         setLoading(false)
         return
     }
@@ -719,37 +557,6 @@ function Dashboard() {
         .catch((error) => {
             console.log(error.message)
         })
-        // try {
-        //     const provider = await getProvider(solanaSecretKey);
-        //     const publicKey = new PublicKey(publicKeyString)
-        //     const program = new Program(idl, programID, provider);
-        //     const newReferenceNumber = transactionReferenceGenerator()
-        //     await program.rpc.topup(new BN(amount.value), "Topup", newReferenceNumber, {
-        //         accounts: {
-        //             hydraAccount: publicKey
-        //         }
-        //     })
-        //     const receiverAccount = await program.account.hydraAccount.fetch(publicKey);
-        //     console.log("Journal");
-        //     receiverAccount.transactions.forEach(journal => {
-        //         console.log(journal.journalType + " : " + journal.amount.toString());
-        //     });
-        //     let temporaryAccount = account
-        //     let temporaryAccountList = account.accountList
-        //     for (let i=0; i<temporaryAccountList.length; i++) {
-        //         if(temporaryAccountList[i].publicKey == publicKeyString) {
-        //             temporaryAccountList[i].balance = receiverAccount.balance.words[0]
-        //             temporaryAccountList[i].transactionList = receiverAccount.transactions
-        //         }
-        //     }
-        //     temporaryAccount.accountList = temporaryAccountList
-        //     setAccount(temporaryAccount)
-        //     setAmount({value: 0, error: true})
-        //     resetBalance()
-        //     handleDebitClose()
-        // } catch(error) {
-        //     alert("Failed to topup to this account: " + error)
-        // }
         setLoading(false)
     }
 

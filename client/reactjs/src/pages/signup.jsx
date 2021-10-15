@@ -37,7 +37,6 @@ const useStyles = makeStyles({
     },
     cssOutlinedInput: {
         fontFamily: "Open-Sans",
-        zIndex: -1000,
         '&$cssFocused $notchedOutline': {
             borderColor: "yellow"
         }
@@ -55,7 +54,6 @@ const useStyles = makeStyles({
 
 const useStyles2 = makeStyles({
     root: {
-        zIndex: -1000
     }
 })
 

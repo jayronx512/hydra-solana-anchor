@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { makeStyles, withStyles } from '@material-ui/core/styles';
 import {reactLocalStorage} from 'reactjs-localstorage';
 import { colorList } from '../data.js'
-import history from '../history';
 import Loading from '../components/loading';
 import MuiAccordion from "@material-ui/core/Accordion";
 import MuiAccordionSummary from "@material-ui/core/AccordionSummary";
@@ -20,16 +19,15 @@ import Select from '@material-ui/core/Select'
 import OutlinedInput from '@material-ui/core/OutlinedInput';
 import axios from 'axios';
 
-import { BN } from 'bn.js'
 import { NodeWallet } from '@project-serum/anchor/dist/cjs/provider';
 import idl from '../idl.json';
 import {
-    Program, Provider, web3
+    Provider, web3
   } from '@project-serum/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
 import PullToRefresh from 'react-simple-pull-to-refresh';
 
-const { SystemProgram, Keypair } = web3;
+const { Keypair } = web3;
 const opts = {
     preflightCommitment: "processed"
 }
@@ -422,39 +420,6 @@ export default function Payee() {
         })
         setLoading(false)
         return
-        // setLoading(true)
-        // const toAccount = new PublicKey(toPublicKey)
-        // let keys = fromPublicKey.value.split(" ")
-        // const fromAccount = new PublicKey(keys[0])
-        // try {
-        //     const solAccount = Keypair.fromSecretKey(new Uint8Array(JSON.parse(solanaSecretKey)));
-        //     const payer = Keypair.fromSecretKey(new Uint8Array(JSON.parse(keys[1])));
-        //     const provider = await getProvider(solanaSecretKey);
-        //     const program = new Program(idl, programID, provider);
-        //     setLoading(false)
-        //     await program.rpc.transfer(
-        //         new BN(amount.value),
-        //         remark.value,
-        //         referenceNumber.value, {
-        //         accounts: {
-        //             fromAccount: fromAccount,
-        //             authority: solAccount.publicKey,
-        //             toAccount: toAccount
-        //         },
-        //         signers: [solAccount, payer]
-        //     })
-        //     setRemark({value: "", error: false})
-        //     setAmount({value: 0, error: true})
-        //     setToPublicKey({value: "", error: true})
-        //     setFromPublicKey({value: "", error: true})
-        //     setReferenceNumber({value: "", error: true})
-        //     alert("Successfully transfer!")
-        // } catch(error) {
-        //     alert("Failed to transfer fund to payee: " + error)
-        // }
-        
-        // handleClose()
-        // setLoading(false)
     }
 
     const addPayee = () => {

@@ -7,7 +7,6 @@ import Loading from '../components/loading';
 import Box from '@mui/material/Box';
 import CustomTopNavigation from '../components/topnavigation';
 
-// import DashboardIcon from '@mui/icons-material/Dashboard';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import PaymentIcon from '@mui/icons-material/Payment';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';

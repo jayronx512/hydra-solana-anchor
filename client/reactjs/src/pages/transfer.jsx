@@ -14,12 +14,11 @@ import { BN } from 'bn.js'
 import { NodeWallet } from '@project-serum/anchor/dist/cjs/provider';
 import idl from '../idl.json';
 import {
-    Program, Provider, web3
+    Provider, web3
   } from '@project-serum/anchor'
 import { Connection, PublicKey } from '@solana/web3.js';
 import axios from 'axios';
-import { formLabelClasses } from '@mui/material';
-const { SystemProgram, Keypair } = web3;
+const {Keypair } = web3;
 
 const opts = {
     preflightCommitment: "processed"
