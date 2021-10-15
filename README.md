@@ -1,4 +1,4 @@
-Infinitude - Coreless solution
+Infinitude - Coreless Solution
 ===
 
 Coreless solution to improve efficiencies at lesser cost with DLT as primary ledger.
@@ -174,10 +174,15 @@ npm start
 ```
 
 Screenshot
------
+
+![1](https://user-images.githubusercontent.com/42803676/137480550-a3084286-8bfb-4404-b5ee-832ef3702d1f.PNG)
+![2](https://user-images.githubusercontent.com/42803676/137480698-48a76038-24bb-41e2-95ac-1f1c1bcd2422.PNG)
+![6](https://user-images.githubusercontent.com/42803676/137480725-a5c48ca5-8cb3-41f5-97c5-6b1745a4ad50.PNG)
+![8](https://user-images.githubusercontent.com/42803676/137480874-30f457c5-746d-4453-bd81-227913679b3b.PNG)
 
 
 Developed By
 ------------
-Infinitude Team
+**Infinitude Team**
+
 Jing Jong, Viet Bui, Madhawa, Wong, Bushan
