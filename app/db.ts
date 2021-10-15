@@ -6,7 +6,7 @@ export class DbConnection {
     private constructor() { }
 
     private async connect() {
-        const uri = 'mongodb+srv://infinitude_adm:infinitude_adm@cluster0.zypfs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority';
+        const uri = 'mongodb://infinitude_adm:infinitude_adm@127.0.0.1:27017/infinitude?retryWrites=true&w=majority';
         return await MongoClient.connect(uri);
     }
 
