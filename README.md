@@ -186,3 +186,6 @@ Developed By
 **Infinitude Team**
 
 Jing Jong, Viet Bui, Madhawa, Wong, Bushan
+
+**Contact us**
+https://t.me/infinitudeteam
