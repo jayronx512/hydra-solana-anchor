@@ -1,4 +1,4 @@
-Infinitude - It's Coreless
+Infinitude - Coreless Solution
 ===
 Technology stack:
 * Rust
@@ -63,14 +63,58 @@ anchor --version
 
 * **Node**
 
-See the [Node.js Downloads page](https://nodejs.org/en/download/) to install node and npm.
+See the [Node.js Downloads page](https://nodejs.org/en/download/) to install _node_ and _npm_.
 
 
 ## Build and deploy the program
 
+Connect solana to Devnet.
+```shen
+solana config set --url devnet
+```
+
+Verify the configurations.
+```shen
+solana config get
+```
+
+Build the program
+```shen
+anchor build
+```
+
+Deploy
+```shen
+anchor deploy
+```
+
 ## Build and run the backend
 
+Open terminal and locate to **app** folder.
+
+Install the dependencies.
+```shen
+npm install
+```
+
+Run the backend.
+```shen
+npm start
+```
+
 ## Build and run the web
+
+Open terminal and locate to **client/reactjs** folder.
+
+Install the dependencies.
+```shen
+npm install
+```
+
+Run the web.
+```shen
+npm start
+```
 
 Screenshot
 -----
