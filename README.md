@@ -178,4 +178,5 @@ Screenshot
 
 Developed By
 ------------
-Infinitude team.
+Infinitude Team.
+Jing Jong, Viet Bui, Madhawa, Wong, Bushan
